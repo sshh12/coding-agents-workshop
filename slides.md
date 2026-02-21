@@ -24,7 +24,7 @@ VP AI, Abnormal Security
 ### Agents crush greenfield. They hit a wall on real codebases.
 
 - The instinct: write more docs, bigger CLAUDE.mds, longer prompts
-- The trap: 500-line rules files that drown the agent in noise
+- The trap: bloated rules files and longer prompts that drown the agent in noise
 - **The reframe: redesign the codebase for the agent**
 
 > **Speaker Notes:** Start at ~0:30. Spend about 60 seconds here. "By now, nearly every one of you has seen an agent write a perfect unit test or churn out flawless boilerplate on a brand new project. But ask it to do something real on your actual codebase, and there's this frustrating glass ceiling. The agent gets lost, misses context, fails to navigate your code." Pause. "Our first instinct is always the same: write more documentation. Bigger CLAUDE.mds. Longer rules files. This is a trap. It expects the AI to learn our messy, human-centric systems. The unlock is the opposite: redesign your software with the agent as the primary user." This sets up the demo. Transition: "I'm going to show you exactly what this looks like. Live." Click to next slide.
@@ -54,19 +54,19 @@ Follow the existing patterns. Run the tests to verify."
 
 ### Version A (the mess)
 
-- Agent read a **500-line god file** trying to understand the app
+- Agent read a **240-line CLAUDE.md** full of meeting notes and project history; got zero signal
+- Searched for "tags" and found **5 conflicting artifacts**: a feature flag set to `False`, broken helper functions, an abandoned template, duplicate validators with different field names
 - Couldn't find templates (they're in `stuff/`)
 - Only test was `assert 1 + 1 == 2`; no real verification
-- Wrote string-typed code with no guardrails
 
 ### Version B (optimized)
 
 - Agent read **50-line CLAUDE.md**, got a repo map in 10 seconds
-- Found `experiments/` folder, followed existing pattern
-- Added tag model + endpoint + template, matching the structure
-- Ran `pytest`, **tests passed on the first try**
+- Found `tags/` folder with model, schema, and a GET route already built
+- Saw a `TODO` comment telling it exactly what POST endpoint to add
+- Added the route (~20 lines), ran `pytest`, **tests passed on the first try**
 
-> **Speaker Notes:** Start at ~5:00. Spend about 3 minutes here. Walk through what happened in each terminal, tying failures to specific structural problems. "On the left, the agent spent its first 30 seconds reading a 500-line file called app.py. That's not a prompt problem, that's a file organization problem. It couldn't find the templates because they were in a folder called 'stuff'. That's a naming problem. The only test was assert 1+1 equals 2, so even after it wrote broken code, nothing caught it. That's a verification problem." Then flip: "On the right, the agent opened CLAUDE.md, got a repo map, knew exactly where to go. It found experiments/, saw the pattern of routes.py, models.py, schemas.py, and followed it. It ran pytest, got green, and stopped." Pause. "Same model. Same prompt. Different codebase. That's the whole talk." Transition: "So what are the actual levers? There are three."
+> **Speaker Notes:** Start at ~5:00. Spend about 3 minutes here. Walk through what happened in each terminal, tying failures to specific structural problems. "On the left, the agent spent its first 30 seconds reading a 240-line CLAUDE.md full of meeting notes and changelog entries. Zero useful signal. Then it searched for 'tags' and found five different files with conflicting ideas about how tags should work: a feature flag set to false, broken helper functions using raw SQL against a table that doesn't exist, an abandoned HTML template, and a validation function expecting different field names than what app.py uses. The agent had to reconcile five different stories. And the only test was 'assert 1+1 equals 2', so even after it cobbled something together, nothing caught the bugs." Then flip: "On the right, the agent opened CLAUDE.md, got a repo map, saw a tags/ directory in the map, went straight there. Found a model, a schema, and a GET route already built. Found a TODO comment telling it exactly what POST endpoint to add and which file to reference for the pattern. It added 20 lines of code, ran pytest, and got green." Pause. "Same model. Same prompt. Different codebase. That's the whole talk." Transition: "So what are the actual levers? There are three."
 
 ---
 
@@ -74,7 +74,8 @@ Follow the existing patterns. Run the tests to verify."
 
 ```
                     +-----------------+
-                    |  RULES FILE     |  Does the agent know the rules?
+                    |  RULES FILE &   |  Does the agent know the rules?
+                    |  AGENT CONFIG   |
                     +-----------------+
                             |
                     +-----------------+
@@ -94,23 +95,32 @@ Score: **0-3 per dimension. Max 9.**
 
 ---
 
-## Slide 6: Dimension 1 — Rules File
+## Slide 6: Dimension 1 — Rules File & Agent Config
 
-### The 150-line rule
+### The 200-line rule (for your root CLAUDE.md)
 
 **What to include:**
-- Exact commands: `pytest`, `npm run lint`, `python manage.py run`
+- Exact commands: `pytest`, `npm run lint`, `python manage.py check`
 - Repo map: where entrypoints, configs, and tests live
 - Definition of done: what must be true before the agent stops
 - 1-2 code examples: a good pattern and a bad pattern
-- Hard boundaries: "do not touch generated files," "ask before adding deps"
+- Hard boundaries: "do not touch tests/," "ask before adding deps"
 
 **What NOT to include:**
-- Your entire architecture doc
-- General coding philosophy
-- Anything over 150 lines
+- Your entire architecture doc, meeting notes, or changelog
+- General coding philosophy ("write clean code")
+- Anything that belongs in a linter config or hook
 
-> **Speaker Notes:** Start at ~9:00. About 90 seconds. "The rules file is the single highest-leverage thing you can add to any repo. And the most common mistake is making it too long. Past 150 lines, the agent starts losing signal in the noise. Think of it as a cheat sheet for a new hire on their first day, not the employee handbook." Reference the demo: "In Version B, the CLAUDE.md was 50 lines. It had the test command, a repo map, and a definition of done. That's it. And that was enough for the agent to navigate the entire codebase." Mention progressive disclosure: "For monorepos, put global rules at the root and folder-level rules in each package. The agent picks up the relevant context as it navigates." Transition: "But even the best rules file can't save you if the agent can't find anything."
+### Beyond CLAUDE.md: the `.claude/` directory
+
+- **`settings.json`**: Tool permissions (allow/deny), environment config
+- **Hooks**: Auto-lint after edits (PostToolUse), block dangerous commands (PreToolUse)
+- **`rules/`** or folder-level CLAUDE.md: Progressive disclosure for monorepos
+- **`skills/`**: Repeatable workflows the agent can auto-discover
+
+**The key insight:** CLAUDE.md is advisory. Hooks are enforcement. Use both.
+
+> **Speaker Notes:** Start at ~9:00. About 90 seconds. "The rules file is the single highest-leverage thing you can add to any repo. And the most common mistake is making it too long. Boris Cherny, who created Claude Code at Anthropic, has his team's CLAUDE.md at about 2,500 tokens, maybe 60-80 lines. Past 200 lines, you're losing signal in the noise." Reference the demo: "In Version B, the CLAUDE.md was 50 lines. It had the test command, a repo map, and a definition of done. That's it. And that was enough for the agent to navigate the entire codebase." Then the level-up: "But CLAUDE.md is just the starting point. Modern Claude Code has a whole .claude directory. Settings.json for permissions: what tools the agent can and can't use. Hooks for automation: auto-run the linter after every file edit, block dangerous commands before they execute. Skills for repeatable workflows. And folder-level rules for progressive disclosure in monorepos. The key insight: CLAUDE.md is advisory; the agent can choose to ignore it. Hooks are enforcement; the agent can't bypass them." Transition: "But even the best rules file can't save you if the agent can't find anything."
 
 ---
 
@@ -119,18 +129,18 @@ Score: **0-3 per dimension. Max 9.**
 ### Five patterns that make codebases agent-readable
 
 1. **Every output is a prompt** — errors and CLI output guide the agent's next step
-2. **Self-documenting code** — `--help` flags and header comments, not external wikis
-3. **Right interface** — CLI for agents that script; MCP for structured tool calls
-4. **Metaphorical interface** — model your tools after pytest, pandas, kubectl
+2. **Self-documenting code** — header comments with purpose + related files, `--help` flags, not external wikis
+3. **Predictable interfaces** — typed configs, enums over strings, conventions the agent already knows (REST, pytest, pandas)
+4. **Greppable names** — descriptive file and function names are the agent's search index
 5. **Workflows, not concepts** — co-locate by feature (`/experiments/`), not by layer (`/models/`)
 
 ### The practical rules
 
-- Max **300 lines** per file
+- **Single-concern files** (split when concerns mix, not at an arbitrary line count)
 - **Descriptive names**: `experiment_routes.py`, not `er.py`
 - **Feature-grouped folders**: everything for one feature in one place
 
-> **Speaker Notes:** Start at ~10:30. About 2 minutes. This is the densest slide, so don't read every bullet. Instead, ground each pattern in the demo: "You saw the difference between 'stuff/templates' and 'experiments/templates'. That's pattern 5: co-locate by feature, not by concept. You saw the agent on the left get a silent 'Success!' from the CLI and not know what to do next. Pattern 1 says every output should be a prompt for the next action." Hit the practical rules quickly: "300 lines per file, descriptive names, feature-grouped folders. These are the mechanical changes. You can audit for them in 5 minutes." If anyone brought up Simon Willison's post or Francois Chollet's tweet during Q&A or hallway chats earlier, reference them: "Simon Willison wrote about this last year: make your codebase productive for AI tools. Surprisingly none of his recommendations involved CLAUDE.md files. It's all structure." Transition: "Structure gets the agent to the right place. But how does it know if it did the right thing?"
+> **Speaker Notes:** Start at ~10:30. About 2 minutes. This is the densest slide, so don't read every bullet. Ground each pattern in the demo: "You saw the difference between 'stuff/templates' and 'experiments/templates'. That's pattern 5: co-locate by feature, not by concept. You saw the agent on the left get a silent 'Success!' from the CLI and not know what to do next. Pattern 1 says every output should be a prompt for the next action. And pattern 4, greppable names: when the agent searched for 'tags' in Version A, it found five files with conflicting ideas. In Version B, it found a folder literally called tags/. The agent uses grep and find to navigate; your file names are its search index." Hit the practical rules: "Single-concern files. The question isn't 'is this file over 300 lines?' The question is 'does this file mix concerns?' A 600-line test file for one module is fine. A 300-line file that does routing, database queries, and HTML rendering is a problem." Transition: "Structure gets the agent to the right place. But how does it know if it did the right thing?"
 
 ---
 
@@ -143,21 +153,20 @@ Linters → Types → Unit Tests → Integration → E2E → Visual
    ←  fast, cheap, narrow  |  slow, expensive, comprehensive  →
 ```
 
-### The critical rule: fixed test suites
+### Three principles
 
-- The agent runs tests. The agent does **not** write tests.
-- If the agent can delete a test to make a bug pass, your suite is broken.
-- Protect test files from agent modification.
+1. **Baseline tests are immutable.** Protect existing tests from agent modification. These are your golden suite that validates known-good behavior.
+2. **Agents write new tests, test-first.** The agent writes a failing test that crystallizes "what correct means" before implementing. TDD for agents.
+3. **Hooks close the feedback loop.** Don't rely on the agent to "remember" to test. PostToolUse hooks auto-run lint, types, and tests after every edit.
 
-### Anti-pattern: the agent's own tests
+### The hook feedback loop
 
 ```
-# Agent writes this to "verify" its broken code
-def test_tags():
-    assert add_tags(1, ["ml"]) is not None  # passes, proves nothing
+Agent edits file → PostToolUse fires → lint + type-check + pytest →
+    errors fed back → agent self-corrects → repeat
 ```
 
-> **Speaker Notes:** Start at ~12:30. About 90 seconds. "This is the dimension most teams score lowest on. Not because they don't have tests, but because the agent can rewrite the tests." Tell the story from the demo: "In Version A, the only test was 'assert 1+1 equals 2'. The agent could have written any code it wanted, run the test, gotten green, and declared victory. That's not verification, that's theater." Then lay out the confidence spectrum: "Linters catch formatting. Types catch wrong shapes. Unit tests catch wrong logic. Integration tests catch wrong wiring. E2E tests catch wrong behavior. The more layers the agent hits on every change, the more you can trust it." The key insight: "Your test suite is a guardrail, not a scorecard. Protect it like you protect your production database." Transition: "Before we move on, let me hit a few patterns you should actively avoid."
+> **Speaker Notes:** Start at ~12:30. About 90 seconds. "This is the dimension most teams score lowest on. And the advice I used to give was wrong. I used to say: 'the agent runs tests, the agent does NOT write tests.' That's too simplistic." New framing: "Here's the nuanced version. Your existing test suite, the one that validates known-good behavior, that's immutable. The agent must not touch it. If the agent can delete a test to make a bug pass, your verification is broken. But the agent absolutely should write NEW tests for new features. Ideally test-first: write the failing test, then implement. Tests are deterministic acceptance criteria for a non-deterministic worker." Tell the demo story: "In Version B, the test suite already had tests for the tagging endpoint. The agent's job was to make them pass. It couldn't modify them. That's the pattern." Then hooks: "The real level-up is hooks. Instead of relying on the agent to remember to run tests, set up a PostToolUse hook that auto-runs lint and pytest after every file edit. The agent gets immediate feedback, not a pile-up of failures at the end." Transition: "Before we move on, let me hit a few patterns you should actively avoid."
 
 ---
 
@@ -165,13 +174,14 @@ def test_tags():
 
 | Anti-Pattern | What Happens | The Fix |
 |---|---|---|
+| **Test-gaming** | Agent modifies or deletes existing tests to make broken code pass | Protect baseline tests with hooks (PreToolUse blocks edits to `tests/`) |
+| **Implementation-mirroring tests** | Agent writes tests that verify its own code line-by-line, not the actual requirement | Require behavior-based tests; tests describe WHAT, not HOW |
 | **Rule-gaming** | Agent modifies lint rules instead of fixing code | Lock config files from agent writes |
-| **Self-written tests** | Agent writes tests that make its own bugs pass | Fixed test suite the agent can't touch |
-| **Infinite retries** | Agent retries failing commands, burns tokens | "Fail twice, stop and explain" rule |
-| **Error swallowing** | Agent wraps everything in try/catch, hides failures | "Let errors surface clearly" in rules file |
-| **Bloated context** | 500-line CLAUDE.md drowns signal in noise | 150-line limit, progressive disclosure |
+| **No feedback loop** | Agent codes for an extended session without running tests; failures compound | PostToolUse hooks auto-run verification after every edit |
+| **Bloated context** | 500-line CLAUDE.md drowns signal in noise | 200-line limit; use `.claude/rules/` for progressive disclosure |
+| **Advisory-only rules** | Agent ignores "do not modify tests" in CLAUDE.md | Enforce with hooks (PreToolUse blocks) and `settings.json` deny rules |
 
-> **Speaker Notes:** Start at ~14:00. About 60 seconds. Go through the table quickly. "Five things I see teams get burned by. Rule-gaming: the agent changes your ESLint config instead of fixing the code. Self-written tests: looks great in CI, breaks on review. Infinite retries: the agent fails, tries again, fails, tries again, burns through your token budget. Error swallowing: the agent wraps everything in try/catch so nothing ever fails. And bloated context: you wrote a 500-line rules file thinking more is better, and the agent can't find anything in it." These should feel like quick hits, not deep dives. The audience can reference the scorecard later for details. Transition: "Alright. That's the framework. Now it's your turn."
+> **Speaker Notes:** Start at ~14:00. About 60 seconds. Go through the table quickly. "Six things I see teams get burned by. Test-gaming: the agent modifies your existing tests to make broken code pass. One developer caught their agent hardcoding golden test pairs into the algorithm. Implementation-mirroring: the agent writes a test that's a line-by-line copy of the implementation; if the code is wrong, the test is wrong too. Rule-gaming: the agent changes your ESLint config instead of fixing the code. No feedback loop: the agent codes for 5 minutes without running anything, and by the time it tests, the failures are too deep to untangle. Bloated context: a 500-line rules file where the agent can't find the test command. And advisory-only rules: you wrote 'do not modify tests' in CLAUDE.md, but the agent ignored it because CLAUDE.md is advisory. Hooks are enforcement." Transition: "Alright. That's the framework. Now it's your turn."
 
 ---
 
@@ -182,7 +192,7 @@ def test_tags():
 **Instructions:**
 
 1. Open `scorecard.md` in the workshop repo (QR code below)
-2. Score your repo **0-3** on each dimension: Rules File, File Organization, Test & Verification
+2. Score your repo **0-3** on each dimension: Rules File & Agent Config, File Organization, Test & Verification
 3. Write down your **#1 quick win** at the bottom
 
 **No repo? Clone Version A and audit that.**

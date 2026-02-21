@@ -31,6 +31,7 @@ class Experiment(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     runs = relationship("Run", back_populates="experiment", cascade="all, delete-orphan")
+    tags = relationship("Tag", back_populates="experiment", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Experiment id={self.id} name={self.name!r} status={self.status.value}>"

@@ -18,6 +18,18 @@
 <p class="description">{{ experiment.description }}</p>
 {% endif %}
 
+<!-- Tags -->
+<div style="margin-bottom: 20px;">
+    <h3>Tags</h3>
+    {% if experiment.tags %}
+        {% for tag in experiment.tags %}
+            <span style="background-color: #e9ecef; padding: 2px 8px; border-radius: 12px; font-size: 0.85em; margin-right: 4px;">{{ tag.name }}</span>
+        {% endfor %}
+    {% else %}
+        <p style="color: #6c757d;">No tags yet. Add tags via POST /api/experiments/{{ experiment.id }}/tags</p>
+    {% endif %}
+</div>
+
 <div class="actions">
     <a href="/experiments/{{ experiment.id }}/compare" class="btn">Compare Runs</a>
 </div>

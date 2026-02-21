@@ -155,3 +155,50 @@ If the live demo fails (network issues, agent misbehaves, etc.):
 - [ ] Pre-recorded backup video ready
 - [ ] Git state clean in both directories
 - [ ] Prompt copied to clipboard, ready to paste
+
+---
+
+## Programmatic Race (Headless)
+
+For running the race without manual narration:
+
+### Quick Start
+
+```bash
+# 1. Reset both repos to clean state
+./race-reset.sh
+
+# 2. Run the race (both agents in parallel)
+./race.sh
+
+# 3. Analyze results
+./race-analyze.sh
+```
+
+### Custom Prompt
+
+```bash
+./race.sh --prompt "Add a CSV export endpoint at POST /api/experiments/{id}/export that returns experiment data with all runs as a downloadable CSV. Follow existing patterns."
+```
+
+### What the Scripts Do
+
+- **`race.sh`**: Launches `claude -p` in both A/ and B/ simultaneously with `--output-format stream-json`. Captures timing, tool calls, and full output to `race-results/<timestamp>/`.
+- **`race-reset.sh`**: Runs `git checkout -- .` and `git clean -fd` in both repos. Deletes any SQLite DB files.
+- **`race-analyze.sh`**: Parses the stream-json output to show timing, tool usage breakdown (Read/Write/Edit/Glob/Grep/Bash counts), token usage, files modified, and test results.
+
+### Expected Results
+
+| Metric | Version A (Before) | Version B (After) |
+|--------|-------------------|-------------------|
+| Time to complete | 3-5 min | 1.5-3 min |
+| Tool calls | 30-50 | 15-25 |
+| Files read before first edit | 5-8 | 2-4 |
+| Test outcome | No meaningful tests | All tests pass |
+| Correct implementation | Maybe | Very likely |
+
+### Alternative Race Prompts
+
+1. **Tagging** (default): "Add experiment tagging with POST /api/experiments/{id}/tags..."
+2. **Bug fix**: "Users report that creating an experiment with status 'completed' doesn't work correctly. Find and fix the bug. Run tests to verify."
+3. **New metric**: "Add a new metric field 'f1_score' (float, 0-1) to runs. Update the model, API, and detail page to support it."

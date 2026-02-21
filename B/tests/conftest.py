@@ -9,12 +9,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from shared.base import Base
-from shared.db import get_db
-
 # Import all models so Base.metadata knows about them before create_all()
 import experiments.models  # noqa: F401
+import exports.models  # noqa: F401
 import runs.models  # noqa: F401
+import tags.models  # noqa: F401
+from shared.base import Base
+from shared.db import get_db
 
 
 @pytest.fixture(name="db_session")

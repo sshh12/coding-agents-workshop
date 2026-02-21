@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Experiment Tags</title>
+    <!-- TODO: copy styles from experiment.html -->
+</head>
+<body>
+    <h1>Tags for {{ experiment.name }}</h1>
+
+    <!-- TODO: this doesn't work yet, the endpoint doesn't exist -->
+    <div id="tags-container">
+        {% if tags %}
+            {% for tag in tags %}
+                <span class="tag-badge">{{ tag }}</span>
+            {% endfor %}
+        {% else %}
+            <p>No tags yet.</p>
+        {% endif %}
+    </div>
+
+    <form id="add-tag-form" action="/api/experiments/{{ experiment.id }}/tags" method="POST">
+        <input type="text" name="tag" placeholder="Add a tag..." />
+        <button type="submit">Add Tag</button>
+    </form>
+
+    <!-- NOTE: the form above uses POST with form data but the API expects JSON -->
+    <!-- Alex was going to fix this but didn't get around to it -->
+
+    <script>
+        // TODO: make this work with AJAX instead of form submission
+        // document.getElementById('add-tag-form').addEventListener('submit', function(e) {
+        //     e.preventDefault();
+        //     // fetch POST to /api/experiments/ID/tags with JSON body
+        // });
+    </script>
+</body>
+</html>

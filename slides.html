@@ -721,7 +721,7 @@
         <h2 class="reveal">Agents crush greenfield.<br>They hit a wall on <span class="accent">real codebases</span>.</h2>
         <ul class="bullet-list reveal" style="margin-top: var(--content-gap);">
             <li>You write more docs, bigger CLAUDE.mds, longer prompts</li>
-            <li>You create noise. You reduce context. <strong>The agent gets dumber.</strong></li>
+            <li>The trap: bloated rules files and longer prompts that drown the agent in noise</li>
             <li><strong class="accent">The reframe: redesign the codebase for the agent</strong></li>
         </ul>
     </div>
@@ -757,19 +757,19 @@ Follow existing patterns. Run tests."</span></div>
             <div class="compare-col bad">
                 <h3>Version A (the mess)</h3>
                 <ul>
-                    <li>Read a <strong>500-line god file</strong> to understand the app</li>
-                    <li>Couldn't find templates (hidden in <code>stuff/</code>)</li>
-                    <li>Only test: <code>assert 1 + 1 == 2</code></li>
-                    <li>String-typed code, no guardrails</li>
+                    <li>Read a <strong>240-line CLAUDE.md</strong> full of meeting notes and project history; got zero signal</li>
+                    <li>Searched for "tags" and found <strong>5 conflicting artifacts</strong>: feature flag, broken helpers, abandoned template, duplicate validators</li>
+                    <li>Couldn't find templates (they're in <code>stuff/</code>)</li>
+                    <li>Only test was <code>assert 1 + 1 == 2</code>; no real verification</li>
                 </ul>
             </div>
             <div class="compare-col good">
                 <h3>Version B (optimized)</h3>
                 <ul>
-                    <li>Read <strong>50-line CLAUDE.md</strong>, got repo map in 10s</li>
-                    <li>Found <code>experiments/</code>, followed pattern</li>
-                    <li>Added model + endpoint + template</li>
-                    <li>Ran <code>pytest</code>, <strong>passed first try</strong></li>
+                    <li>Read <strong>50-line CLAUDE.md</strong>, got a repo map in 10 seconds</li>
+                    <li>Found <code>tags/</code> folder with model, schema, and a GET route already built</li>
+                    <li>Saw a <code>TODO</code> comment telling it exactly what POST endpoint to add</li>
+                    <li>Added the route (~20 lines), ran <code>pytest</code>, <strong>tests passed on the first try</strong></li>
                 </ul>
             </div>
         </div>
@@ -788,7 +788,7 @@ Follow existing patterns. Run tests."</span></div>
             <div class="dimension-card">
                 <div class="dimension-num">1</div>
                 <div class="dimension-text">
-                    <h3>Rules File</h3>
+                    <h3>Rules File & Agent Config</h3>
                     <p>Does the agent know the rules?</p>
                 </div>
             </div>
@@ -818,12 +818,12 @@ Follow existing patterns. Run tests."</span></div>
 <section class="slide" data-notes="<span class='note-timing'>9:00 / 90s</span> — 'The rules file is the single highest-leverage thing you can add. Most common mistake: making it too long. Past 150 lines, agent loses signal. Think of it as a cheat sheet for a new hire on day one, not the employee handbook.' Reference demo: 'Version B had 50 lines: test command, repo map, definition of done. That was enough.' Mention progressive disclosure for monorepos. Transition: 'But even the best rules file can't save you if the agent can't find anything.'">
     <div class="slide-content">
         <div class="slide-label reveal">Dimension 1</div>
-        <h2 class="reveal">Rules File <span class="muted">/ the 150-line rule</span></h2>
+        <h2 class="reveal">Rules File & Agent Config <span class="muted">/ the 200-line rule</span></h2>
         <div class="split-section" style="margin-top: var(--content-gap);">
             <div class="reveal">
                 <h3 class="accent" style="font-size: var(--small-size); text-transform: uppercase; letter-spacing: 0.1em;">Include</h3>
                 <ul class="bullet-list">
-                    <li>Exact commands: <code>pytest</code>, <code>npm run lint</code></li>
+                    <li>Exact commands: <code>pytest</code>, <code>npm run lint</code>, <code>python manage.py check</code></li>
                     <li>Repo map: where entrypoints, configs, tests live</li>
                     <li>Definition of done: what must be true before agent stops</li>
                     <li>Hard boundaries: "do not touch tests", "ask before adding deps"</li>
@@ -832,11 +832,23 @@ Follow existing patterns. Run tests."</span></div>
             <div class="reveal">
                 <h3 class="danger" style="font-size: var(--small-size); text-transform: uppercase; letter-spacing: 0.1em;">Exclude</h3>
                 <ul class="bullet-list">
-                    <li>Architecture docs and project history</li>
+                    <li>Meeting notes, changelogs, or architecture docs</li>
                     <li>General coding philosophy</li>
-                    <li>Anything over 150 lines</li>
+                    <li>Anything that belongs in a linter config or hook</li>
                 </ul>
             </div>
+        </div>
+        <div class="reveal" style="margin-top: var(--content-gap);">
+            <h3 class="accent" style="font-size: var(--small-size); text-transform: uppercase; letter-spacing: 0.1em;">Beyond CLAUDE.md: the <code>.claude/</code> directory</h3>
+            <ul class="bullet-list">
+                <li><strong><code>settings.json</code></strong>: Tool permissions (allow, deny), environment config</li>
+                <li><strong>Hooks</strong>: Auto-lint after edits (PostToolUse), block dangerous commands (PreToolUse)</li>
+                <li><strong><code>rules/</code></strong> or folder-level CLAUDE.md: Progressive disclosure for monorepos</li>
+                <li><strong><code>skills/</code></strong>: Repeatable workflows the agent can auto-discover</li>
+            </ul>
+        </div>
+        <div class="highlight-bar reveal" style="margin-top: var(--content-gap);">
+            <p><strong>CLAUDE.md is advisory. Hooks are enforcement. Use both.</strong></p>
         </div>
     </div>
     <div class="slide-number">06 / 13</div>
@@ -850,14 +862,14 @@ Follow existing patterns. Run tests."</span></div>
         <div class="slide-label reveal">Dimension 2</div>
         <h2 class="reveal">File Organization <span class="muted">/ five patterns</span></h2>
         <ol class="numbered-list reveal" style="margin-top: var(--content-gap);">
-            <li><strong>Every output is a prompt</strong> <span class="muted">errors guide the agent's next step</span></li>
-            <li><strong>Self-documenting code</strong> <span class="muted">--help flags and header comments</span></li>
-            <li><strong>Right interface</strong> <span class="muted">CLI for scripting, MCP for tool calls</span></li>
-            <li><strong>Metaphorical interface</strong> <span class="muted">model tools after pytest, kubectl</span></li>
+            <li><strong>Every output is a prompt</strong> <span class="muted">errors and CLI output guide the agent's next step</span></li>
+            <li><strong>Self-documenting code</strong> <span class="muted">header comments with purpose + related files, <code>--help</code> flags, not external wikis</span></li>
+            <li><strong>Predictable interfaces</strong> <span class="muted">typed configs, enums over strings, conventions the agent already knows</span></li>
+            <li><strong>Greppable names</strong> <span class="muted">descriptive file and function names are the agent's search index</span></li>
             <li><strong>Workflows, not concepts</strong> <span class="muted">co-locate by feature, not by layer</span></li>
         </ol>
         <div class="highlight-bar reveal" style="margin-top: var(--content-gap);">
-            <p>Max <strong>300 lines</strong> per file. <strong>Descriptive names.</strong> Feature-grouped folders.</p>
+            <p><strong>Single-concern files</strong> (split when concerns mix, not at an arbitrary line count). <strong>Descriptive names.</strong> Feature-grouped folders.</p>
         </div>
     </div>
     <div class="slide-number">07 / 13</div>
@@ -884,13 +896,17 @@ Follow existing patterns. Run tests."</span></div>
                 <span>slow, expensive, comprehensive</span>
             </div>
         </div>
-        <div class="highlight-bar reveal">
-            <p><strong>The critical rule:</strong> the agent runs tests. The agent does <strong class="danger">not</strong> write tests.</p>
+        <div class="reveal" style="margin-top: var(--content-gap);">
+            <h3 style="font-size: var(--small-size); text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: clamp(0.5rem, 1vh, 0.75rem);">Three principles</h3>
+            <ol class="numbered-list">
+                <li><strong>Baseline tests are immutable.</strong> <span class="muted">Protect existing tests from agent modification.</span></li>
+                <li><strong>Agents write new tests, test-first.</strong> <span class="muted">TDD for agents: write the failing test, then implement.</span></li>
+                <li><strong>Hooks close the feedback loop.</strong> <span class="muted">PostToolUse hooks auto-run lint, types, and tests after every edit.</span></li>
+            </ol>
         </div>
-        <div class="code-block reveal" style="margin-top: var(--content-gap); max-width: 50ch;">
-<span class="comment"># Anti-pattern: agent "verifies" its own code</span>
-<span class="keyword">def</span> test_tags():
-    <span class="keyword">assert</span> add_tags(1, [<span class="string">"ml"</span>]) <span class="keyword">is not</span> None  <span class="comment"># proves nothing</span></div>
+        <div class="highlight-bar reveal" style="margin-top: var(--content-gap);">
+            <p style="font-family: var(--font-mono); font-size: var(--small-size);">Agent edits file → PostToolUse fires → lint + type-check + pytest → errors fed back → agent self-corrects → repeat</p>
+        </div>
     </div>
     <div class="slide-number">08 / 13</div>
 </section>
@@ -907,11 +923,12 @@ Follow existing patterns. Run tests."</span></div>
                 <tr><th>Pattern</th><th>What happens</th><th>Fix</th></tr>
             </thead>
             <tbody>
+                <tr><td>Test-gaming</td><td>Agent modifies/deletes existing tests to make broken code pass</td><td>Protect baseline tests with hooks</td></tr>
+                <tr><td>Implementation-mirroring tests</td><td>Agent writes tests that verify its own code line-by-line</td><td>Require behavior-based tests</td></tr>
                 <tr><td>Rule-gaming</td><td>Agent modifies lint rules instead of fixing code</td><td>Lock config files</td></tr>
-                <tr><td>Self-written tests</td><td>Agent writes tests that pass its own bugs</td><td>Fixed test suite</td></tr>
-                <tr><td>Infinite retries</td><td>Agent retries failing commands, burns tokens</td><td>"Fail twice, stop" rule</td></tr>
-                <tr><td>Error swallowing</td><td>Agent wraps everything in try/catch</td><td>"Let errors surface" rule</td></tr>
-                <tr><td>Bloated context</td><td>500-line CLAUDE.md drowns signal</td><td>150-line limit</td></tr>
+                <tr><td>No feedback loop</td><td>Agent codes for extended sessions without running tests</td><td>PostToolUse hooks auto-run verification</td></tr>
+                <tr><td>Bloated context</td><td>500-line CLAUDE.md drowns signal</td><td>200-line limit, use <code>.claude/rules/</code> for progressive disclosure</td></tr>
+                <tr><td>Advisory-only rules</td><td>Agent ignores "do not modify tests" in CLAUDE.md</td><td>Enforce with hooks and <code>settings.json</code> deny rules</td></tr>
             </tbody>
         </table>
     </div>
@@ -928,7 +945,7 @@ Follow existing patterns. Run tests."</span></div>
         <div class="instructions-box reveal" style="margin-top: var(--content-gap);">
             <ol class="numbered-list">
                 <li>Open <code>scorecard.md</code> in the workshop repo</li>
-                <li>Score your repo <strong>0-3</strong> on each dimension</li>
+                <li>Score your repo <strong>0-3</strong> on each dimension: Rules File & Agent Config, File Organization, Test & Verification</li>
                 <li>Write down your <strong>#1 quick win</strong></li>
             </ol>
             <p style="margin-top: 0.5rem; font-size: var(--small-size); color: var(--text-muted);">No repo? Clone Version A and audit that.</p>

@@ -37,6 +37,12 @@ def create_app() -> FastAPI:
     app.include_router(experiments_router)
     app.include_router(runs_router)
 
+    from exports.routes import router as exports_router
+    from tags.routes import router as tags_router
+
+    app.include_router(tags_router)
+    app.include_router(exports_router)
+
     # Dashboard
     import os
 
@@ -144,7 +150,9 @@ def create_app() -> FastAPI:
 def _ensure_tables():
     """Import all models so Base.metadata knows about them, then create tables."""
     import experiments.models  # noqa: F401
+    import exports.models  # noqa: F401
     import runs.models  # noqa: F401
+    import tags.models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
 

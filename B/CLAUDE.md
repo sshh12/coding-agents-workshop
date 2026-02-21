@@ -14,11 +14,14 @@ ruff check .                  # Lint
 ## Repo Map
 
 ```
-manage.py                  # CLI entrypoint (run, test, seed, migrate)
+manage.py                  # CLI entrypoint
 experiments/               # Experiment CRUD: routes, models, schemas, templates
 runs/                      # Run logging & comparison: routes, models, schemas, templates
+tags/                      # Experiment tagging: routes, models, schemas
+exports/                   # Data export (JSON/CSV): routes, models, schemas
 shared/                    # DB engine, config, base model, base templates
 tests/                     # Fixed test suite (DO NOT MODIFY)
+.claude/                   # Agent config: hooks, skills, commands
 pyproject.toml             # Ruff config
 ```
 
