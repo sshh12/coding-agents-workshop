@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimizing Codebases for Agents</title>
+    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600&display=swap">
+    <style>
+        /* ===========================================
+           CSS CUSTOM PROPERTIES (THEME)
+           Terminal Noir aesthetic + sky blue accent
+           =========================================== */
+        :root {
+            --bg-primary: #111111;
+            --bg-secondary: #1a1a1a;
+            --bg-card: #161616;
+            --text-primary: #fafafa;
+            --text-secondary: #888;
+            --text-muted: #8a8a8a;
+            --accent: #38bdf8;
+            --accent-dim: rgba(56, 189, 248, 0.15);
+            --accent-glow: rgba(56, 189, 248, 0.08);
+            --danger: #f87171;
+            --success: #4ade80;
+
+            --font-body: 'General Sans', -apple-system, system-ui, sans-serif;
+            --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+
+            --title-size: clamp(2.2rem, 6vw, 4.5rem);
+            --h2-size: clamp(1.4rem, 3.5vw, 2.5rem);
+            --h3-size: clamp(1.1rem, 2.5vw, 1.6rem);
+            --body-size: clamp(0.8rem, 1.4vw, 1.05rem);
+            --small-size: clamp(0.65rem, 1vw, 0.85rem);
+            --mono-size: clamp(0.7rem, 1.1vw, 0.85rem);
+
+            --slide-padding: clamp(2rem, 5vw, 5rem);
+            --content-gap: clamp(0.8rem, 2vw, 1.8rem);
+        }
+
+        /* ===========================================
+           BASE STYLES
+           =========================================== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-snap-type: y mandatory;
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            height: 100%;
+        }
+
+        /* Scanline overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(255,255,255,0.006) 2px,
+                rgba(255,255,255,0.006) 4px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* ===========================================
+           SLIDE CONTAINER
+           =========================================== */
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            padding: var(--slide-padding);
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-height: 100%;
+            overflow: hidden;
+        }
+
+        /* ===========================================
+           TYPOGRAPHY
+           =========================================== */
+        h1 {
+            font-size: var(--title-size);
+            font-weight: 600;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        h2 {
+            font-size: var(--h2-size);
+            font-weight: 600;
+            line-height: 1.2;
+            letter-spacing: -0.01em;
+            margin-bottom: var(--content-gap);
+        }
+
+        h3 {
+            font-size: var(--h3-size);
+            font-weight: 500;
+            line-height: 1.3;
+            margin-bottom: clamp(0.5rem, 1vw, 1rem);
+        }
+
+        p, li {
+            font-size: var(--body-size);
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .accent { color: var(--accent); }
+        .danger { color: var(--danger); }
+        .success { color: var(--success); }
+        .muted { color: var(--text-muted); }
+        strong { color: var(--text-primary); font-weight: 500; }
+
+        /* ===========================================
+           TERMINAL ELEMENTS
+           =========================================== */
+        .terminal-prompt {
+            font-family: var(--font-mono);
+            font-size: var(--mono-size);
+            color: var(--accent);
+            margin-bottom: clamp(1rem, 2vh, 2rem);
+        }
+
+        .terminal-prompt::before {
+            content: '$ ';
+            color: var(--text-muted);
+        }
+
+        .cursor-blink {
+            display: inline-block;
+            width: 0.55em;
+            height: 1.1em;
+            background: var(--accent);
+            vertical-align: text-bottom;
+            animation: blink 1s steps(1) infinite;
+            margin-left: 2px;
+        }
+
+        code, .code-block {
+            font-family: var(--font-mono);
+            font-size: var(--mono-size);
+            background: var(--bg-secondary);
+            border: 1px solid #222;
+            border-radius: 4px;
+        }
+
+        code {
+            padding: 0.15em 0.4em;
+        }
+
+        .code-block {
+            padding: clamp(0.75rem, 1.5vw, 1.25rem);
+            line-height: 1.6;
+            overflow: hidden;
+            white-space: pre;
+            color: var(--text-secondary);
+        }
+
+        .code-block .comment { color: var(--text-muted); }
+        .code-block .keyword { color: var(--accent); }
+        .code-block .string { color: #fbbf24; }
+
+        /* ===========================================
+           HIGHLIGHT BAR
+           =========================================== */
+        .highlight-bar {
+            border-left: 2px solid var(--accent);
+            padding-left: clamp(0.75rem, 1.5vw, 1.25rem);
+            background: var(--accent-glow);
+        }
+
+        /* ===========================================
+           COMPARISON LAYOUT
+           =========================================== */
+        .compare-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(1rem, 2vw, 2rem);
+        }
+
+        .compare-col {
+            padding: clamp(0.75rem, 1.5vw, 1.25rem);
+            border-radius: 6px;
+            border: 1px solid #222;
+        }
+
+        .compare-col.bad {
+            border-color: rgba(248, 113, 113, 0.2);
+            background: rgba(248, 113, 113, 0.03);
+        }
+
+        .compare-col.good {
+            border-color: rgba(56, 189, 248, 0.2);
+            background: var(--accent-glow);
+        }
+
+        .compare-col h3 {
+            font-size: var(--small-size);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: clamp(0.5rem, 1vh, 0.75rem);
+        }
+
+        .compare-col.bad h3 { color: var(--danger); }
+        .compare-col.good h3 { color: var(--accent); }
+
+        .compare-col ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(0.3rem, 0.7vh, 0.5rem);
+        }
+
+        .compare-col li {
+            font-size: var(--small-size);
+            padding-left: 1.2em;
+            position: relative;
+        }
+
+        .compare-col.bad li::before {
+            content: '\2717';
+            position: absolute;
+            left: 0;
+            color: var(--danger);
+        }
+
+        .compare-col.good li::before {
+            content: '\2713';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+
+        /* ===========================================
+           BULLET LISTS
+           =========================================== */
+        .bullet-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(0.4rem, 1vh, 0.75rem);
+        }
+
+        .bullet-list li {
+            padding-left: 1.5em;
+            position: relative;
+        }
+
+        .bullet-list li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.6em;
+            width: 6px;
+            height: 6px;
+            border-radius: 1px;
+            background: var(--accent);
+        }
+
+        /* Numbered list for patterns */
+        .numbered-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(0.3rem, 0.8vh, 0.6rem);
+            counter-reset: item;
+        }
+
+        .numbered-list li {
+            padding-left: 2em;
+            position: relative;
+            counter-increment: item;
+        }
+
+        .numbered-list li::before {
+            content: counter(item) '.';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            font-weight: 600;
+        }
+
+        /* ===========================================
+           TABLE
+           =========================================== */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--small-size);
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: clamp(0.3rem, 0.6vh, 0.5rem) clamp(0.5rem, 1vw, 0.75rem);
+            color: var(--accent);
+            font-family: var(--font-mono);
+            font-weight: 500;
+            font-size: clamp(0.6rem, 0.9vw, 0.75rem);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-bottom: 1px solid #333;
+        }
+
+        .data-table td {
+            padding: clamp(0.3rem, 0.6vh, 0.5rem) clamp(0.5rem, 1vw, 0.75rem);
+            color: var(--text-secondary);
+            border-bottom: 1px solid #1a1a1a;
+            vertical-align: top;
+        }
+
+        .data-table td:first-child { color: var(--text-primary); font-weight: 500; }
+
+        /* ===========================================
+           DIMENSION CARDS
+           =========================================== */
+        .dimension-stack {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(0.5rem, 1vh, 0.75rem);
+        }
+
+        .dimension-card {
+            display: flex;
+            align-items: center;
+            gap: clamp(0.75rem, 1.5vw, 1.5rem);
+            padding: clamp(0.6rem, 1.2vh, 1rem) clamp(0.75rem, 1.5vw, 1.25rem);
+            background: var(--bg-secondary);
+            border: 1px solid #222;
+            border-radius: 6px;
+        }
+
+        .dimension-num {
+            font-family: var(--font-mono);
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            font-weight: 600;
+            color: var(--accent);
+            min-width: 2ch;
+        }
+
+        .dimension-text h3 {
+            margin-bottom: 0.15em;
+            font-size: var(--body-size);
+        }
+
+        .dimension-text p {
+            font-size: var(--small-size);
+            color: var(--text-muted);
+        }
+
+        /* ===========================================
+           SPECTRUM BAR
+           =========================================== */
+        .spectrum {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            padding: clamp(0.5rem, 1vh, 0.75rem) 0;
+        }
+
+        .spectrum-item {
+            flex: 1;
+            text-align: center;
+            padding: clamp(0.4rem, 0.8vh, 0.6rem) clamp(0.25rem, 0.5vw, 0.5rem);
+            font-family: var(--font-mono);
+            font-size: clamp(0.55rem, 0.85vw, 0.7rem);
+            border-top: 2px solid var(--accent);
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .spectrum-item::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            transform: translateX(-50%);
+        }
+
+        .spectrum-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: clamp(0.55rem, 0.8vw, 0.7rem);
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            margin-top: clamp(0.2rem, 0.5vh, 0.3rem);
+        }
+
+        /* ===========================================
+           TIMER
+           =========================================== */
+        .timer-display {
+            font-family: var(--font-mono);
+            font-size: clamp(5rem, 15vw, 12rem);
+            font-weight: 600;
+            color: var(--accent);
+            letter-spacing: 0.05em;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .timer-label {
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--text-muted);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-top: clamp(0.5rem, 1vh, 1rem);
+        }
+
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: clamp(1rem, 2vh, 2rem);
+        }
+
+        .timer-btn {
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 0.4em 1.2em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .timer-btn:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* ===========================================
+           SLIDE-SPECIFIC
+           =========================================== */
+        .slide-label {
+            font-family: var(--font-mono);
+            font-size: clamp(0.6rem, 0.9vw, 0.75rem);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--text-muted);
+            margin-bottom: clamp(0.5rem, 1vh, 1rem);
+        }
+
+        .thesis-block {
+            font-family: var(--font-mono);
+            font-size: clamp(0.85rem, 1.3vw, 1rem);
+            color: var(--text-secondary);
+            padding: clamp(0.6rem, 1.2vh, 1rem) clamp(0.75rem, 1.5vw, 1.25rem);
+            border-left: 2px solid var(--accent);
+            background: var(--accent-glow);
+            margin-top: clamp(1rem, 2vh, 1.5rem);
+            max-width: 50ch;
+        }
+
+        .meta-line {
+            font-size: var(--small-size);
+            color: var(--text-muted);
+            margin-top: clamp(1.5rem, 3vh, 3rem);
+            display: flex;
+            gap: clamp(1rem, 2vw, 2rem);
+        }
+
+        .meta-line span { color: var(--text-secondary); }
+
+        .instructions-box {
+            background: var(--bg-secondary);
+            border: 1px solid #222;
+            border-radius: 6px;
+            padding: clamp(0.75rem, 1.5vw, 1.25rem);
+        }
+
+        .big-number {
+            font-family: var(--font-mono);
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .score-badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--accent);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 0.15em 0.5em;
+            border-radius: 3px;
+            margin-top: clamp(0.5rem, 1vh, 0.75rem);
+        }
+
+        .split-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(1.5rem, 3vw, 3rem);
+        }
+
+        /* ===========================================
+           PROGRESS BAR
+           =========================================== */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 2px;
+            background: var(--accent);
+            z-index: 10000;
+            transition: width 0.3s ease;
+        }
+
+        /* ===========================================
+           NAV DOTS
+           =========================================== */
+        .nav-dots {
+            position: fixed;
+            right: clamp(0.5rem, 1.5vw, 1.5rem);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 10000;
+        }
+
+        .nav-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #333;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 6px var(--accent);
+        }
+
+        /* ===========================================
+           SLIDE NUMBER
+           =========================================== */
+        .slide-number {
+            position: absolute;
+            bottom: clamp(0.75rem, 1.5vh, 1.5rem);
+            right: clamp(1rem, 2vw, 2rem);
+            font-family: var(--font-mono);
+            font-size: clamp(0.6rem, 0.8vw, 0.7rem);
+            color: #333;
+        }
+
+        /* ===========================================
+           SPEAKER NOTES TOGGLE
+           =========================================== */
+        .notes-indicator {
+            position: fixed;
+            bottom: clamp(0.5rem, 1vh, 1rem);
+            left: clamp(0.5rem, 1vw, 1rem);
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: #333;
+            z-index: 10001;
+            cursor: pointer;
+        }
+
+        .notes-indicator:hover { color: var(--text-muted); }
+
+        .speaker-notes {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-height: 35vh;
+            background: rgba(0, 0, 0, 0.95);
+            border-top: 1px solid #333;
+            padding: 1rem 2rem;
+            overflow-y: auto;
+            z-index: 10002;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .speaker-notes.visible { display: block; }
+
+        .speaker-notes .note-timing {
+            color: var(--accent);
+            font-family: var(--font-mono);
+            font-weight: 600;
+        }
+
+        /* ===========================================
+           ANIMATIONS
+           =========================================== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(15px);
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .slide.visible .reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal:nth-child(1) { transition-delay: 0.05s; }
+        .reveal:nth-child(2) { transition-delay: 0.12s; }
+        .reveal:nth-child(3) { transition-delay: 0.19s; }
+        .reveal:nth-child(4) { transition-delay: 0.26s; }
+        .reveal:nth-child(5) { transition-delay: 0.33s; }
+        .reveal:nth-child(6) { transition-delay: 0.4s; }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* ===========================================
+           RESPONSIVE
+           =========================================== */
+        @media (max-height: 700px) {
+            :root {
+                --slide-padding: clamp(1.5rem, 4vw, 3rem);
+                --content-gap: clamp(0.5rem, 1.5vw, 1rem);
+            }
+        }
+
+        @media (max-height: 600px) {
+            :root {
+                --slide-padding: clamp(1rem, 3vw, 2rem);
+                --content-gap: clamp(0.4rem, 1vw, 0.75rem);
+                --title-size: clamp(1.5rem, 5vw, 3rem);
+            }
+            .nav-dots, .notes-indicator { display: none; }
+        }
+
+        @media (max-height: 500px) {
+            :root {
+                --slide-padding: clamp(0.75rem, 2.5vw, 1.5rem);
+                --title-size: clamp(1.2rem, 4vw, 2rem);
+                --body-size: clamp(0.65rem, 1vw, 0.85rem);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .compare-grid, .split-section { grid-template-columns: 1fr; }
+            .spectrum-item { font-size: clamp(0.45rem, 2vw, 0.6rem); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+            html { scroll-behavior: auto; }
+            .reveal { opacity: 1; transform: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+<nav class="nav-dots" id="navDots"></nav>
+<div class="notes-indicator" id="notesToggle">[N] notes</div>
+<div class="speaker-notes" id="speakerNotes"></div>
+
+<!-- =============================================
+     SLIDE 1: TITLE
+     ============================================= -->
+<section class="slide" data-notes="<span class='note-timing'>0:00 / 30s</span> — Open cold: 'I use Claude Code. A lot. At home for personal projects, at work leading an AI team that ships production agents. And the single biggest unlock I've found for getting more out of coding agents has nothing to do with prompting. It has everything to do with how my codebase is organized.' Pause. 'Your agent isn't broken. Your codebase is. That's the thesis. In the next hour, you're going to audit your own repo and start fixing it.' Transition: 'Let me show you what I mean.'">
+    <div class="slide-content">
+        <div class="terminal-prompt reveal">claude --workshop<span class="cursor-blink"></span></div>
+        <h1 class="reveal">Optimizing Codebases for <span class="accent">Agents</span></h1>
+        <div class="thesis-block reveal">Your agent isn't broken. Your codebase is.</div>
+        <div class="meta-line reveal">
+            <div>Shrivu Shankar <span>/ VP AI, Abnormal Security</span></div>
+            <div><span>March 3, 2026</span></div>
+        </div>
+    </div>
+    <div class="slide-number">01 / 13</div>
+</section>
+
+<!-- =============================================
+     SLIDE 2: THE GLASS CEILING
+     ============================================= -->
+<section class="slide" data-notes="<span class='note-timing'>0:30 / 60s</span> — 'By now, nearly every one of you has seen an agent write a perfect unit test or churn out flawless boilerplate on a brand new project. But ask it to do something real on your actual codebase, and there's this frustrating glass ceiling. The agent gets lost, misses context, fails to navigate your code.' Pause. 'Our first instinct is always the same: write more documentation. Bigger CLAUDE.mds. Longer rules files. This is a trap. The unlock is the opposite: redesign your software with the agent as the primary user.' Transition: 'I'm going to show you exactly what this looks like. Live.'">
+    <div class="slide-content">
+        <div class="slide-label reveal">The problem</div>
+        <h2 class="reveal">Agents crush greenfield.<br>They hit a wall on <span class="accent">real codebases</span>.</h2>
+        <ul class="bullet-list reveal" style="margin-top: var(--content-gap);">
+            <li>You write more docs, bigger CLAUDE.mds, longer prompts</li>
+            <li>You create noise. You reduce context. <strong>The agent gets dumber.</strong></li>
+            <li><strong class="accent">The reframe: redesign the codebase for the agent</strong></li>
+        </ul>
+    </div>
+    <div class="slide-number">02 / 13</div>
+</section>
+
+<!-- =============================================
+     SLIDE 3: THE AGENT RACE
+     ============================================= -->
+<section class="slide" data-notes="<span class='note-timing'>1:30 / 3-4 min</span> — This is the centerpiece. Two terminal windows side by side. Left: cd A/ (messy). Right: cd B/ (optimized). Same prompt in both. Narrate: 'On the left, realistic codebase. God file, cryptic folders, no useful tests. On the right, same app, same functionality, organized for the agent.' Point out: left agent reading 500-line god file, templates in stuff/, test that only tests 1+1=2. Right agent reads 50-line CLAUDE.md, navigates to experiments/, follows routes.py/models.py/schemas.py pattern. <strong>FALLBACK:</strong> If agent hangs: 'Let me show you what this looked like when I ran it this morning' and switch to pre-recorded video. Let the difference land visually before narrating.">
+    <div class="slide-content">
+        <div class="slide-label reveal">Live demo</div>
+        <h2 class="reveal">The Agent Race</h2>
+        <p class="reveal" style="margin-bottom: var(--content-gap);">Two terminals. Same prompt. Same model. Two repos. <strong>Watch what happens.</strong></p>
+        <div class="code-block reveal" style="max-width: 55ch;">
+<span class="comment"># The prompt (identical for both agents)</span>
+<span class="string">"Add experiment tagging. New endpoint
+POST /api/experiments/{id}/tags and
+show tags on the detail page.
+Follow existing patterns. Run tests."</span></div>
+    </div>
+    <div class="slide-number">03 / 13</div>
+</section>
+
+<!-- =============================================
+     SLIDE 4: WHAT JUST HAPPENED
+     ============================================= -->
+<section class="slide" data-notes="<span class='note-timing'>5:00 / 3 min</span> — Walk through each terminal: 'On the left, the agent spent 30 seconds reading a 500-line app.py. That's a file organization problem. Couldn't find templates in stuff/. That's a naming problem. Only test was 1+1=2, so broken code passed. That's a verification problem.' Flip: 'On the right, CLAUDE.md gave a repo map. Found experiments/, followed the pattern. Ran pytest, got green, stopped.' Pause: 'Same model. Same prompt. Different codebase. That's the whole talk.' Transition: 'So what are the actual levers? There are three.'">
+    <div class="slide-content">
+        <div class="slide-label reveal">Results</div>
+        <h2 class="reveal">What just happened?</h2>
+        <div class="compare-grid reveal">
+            <div class="compare-col bad">
+                <h3>Version A (the mess)</h3>
+                <ul>
+                    <li>Read a <strong>500-line god file</strong> to understand the app</li>
+                    <li>Couldn't find templates (hidden in <code>stuff/</code>)</li>
+                    <li>Only test: <code>assert 1 + 1 == 2</code></li>
+                    <li>String-typed code, no guardrails</li>
+                </ul>
+            </div>
+            <div class="compare-col good">
+                <h3>Version B (optimized)</h3>
+                <ul>
+                    <li>Read <strong>50-line CLAUDE.md</strong>, got repo map in 10s</li>
+                    <li>Found <code>experiments/</code>, followed pattern</li>
+                    <li>Added model + endpoint + template</li>
+                    <li>Ran <code>pytest</code>, <strong>passed first try</strong></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="slide-number">04 / 13</div>
+</section>
+
+<!-- =============================================
+     SLIDE 5: THREE DIMENSIONS
+     ============================================= -->
+<section class="slide" data-notes="<span class='note-timing'>8:00 / 60s</span> — Keep it quick: 'Three dimensions. Three questions. Does the agent know the rules? Can it find things? Can it verify its own work? Each scored 0-3, max 9. Most teams are around 2-4. We'll go through each one, then you score your own repo.' Transition: 'Let's start with the rules file.'">
+    <div class="slide-content">
+        <div class="slide-label reveal">The framework</div>
+        <h2 class="reveal">Three Dimensions of Agent-Readiness</h2>
+        <div class="dimension-stack reveal">
+            <div class="dimension-card">
+                <div class="dimension-num">1</div>
+                <div class="dimension-text">
+                    <h3>Rules File</h3>
+                    <p>Does the agent know the rules?</p>
+                </div>
+            </div>
+            <div class="dimension-card">
+                <div class="dimension-num">2</div>
+                <div class="dimension-text">
+                    <h3>File Organization</h3>
+                    <p>Can the agent find things?</p>
+                </div>
+            </div>
+            <div class="dimension-card">
+                <div class="dimension-num">3</div>
+                <div class="dimension-text">
+                    <h3>Test & Verification</h3>
+                    <p>Can the agent verify its work?</p>
+                </div>
+            </div>
+        </div>
+        <div class="score-badge reveal">0-3 per dimension / max 9</div>
+    </div>
+    <div class="slide-number">05 / 13</div>
+</section>
+
+<!-- =============================================
+     SLIDE 6: RULES FILE
+     ============================================= -->
+<section class="slide" data-notes="<span class='note-timing'>9:00 / 90s</span> — 'The rules file is the single highest-leverage thing you can add. Most common mistake: making it too long. Past 150 lines, agent loses signal. Think of it as a cheat sheet for a new hire on day one, not the employee handbook.' Reference demo: 'Version B had 50 lines: test command, repo map, definition of done. That was enough.' Mention progressive disclosure for monorepos. Transition: 'But even the best rules file can't save you if the agent can't find anything.'">
+    <div class="slide-content">
+        <div class="slide-label reveal">Dimension 1</div>
+        <h2 class="reveal">Rules File <span class="muted">/ the 150-line rule</span></h2>
+        <div class="split-section" style="margin-top: var(--content-gap);">
+            <div class="reveal">
+                <h3 class="accent" style="font-size: var(--small-size); text-transform: uppercase; letter-spacing: 0.1em;">Include</h3>
+                <ul class="bullet-list">
+                    <li>Exact commands: <code>pytest</code>, <code>npm run lint</code></li>
+                    <li>Repo map: where entrypoints, configs, tests live</li>
+                    <li>Definition of done: what must be true before agent stops</li>
+                    <li>Hard boundaries: "do not touch tests", "ask before adding deps"</li>
+                </ul>
+            </div>
+            <div class="reveal">
+                <h3 class="danger" style="font-size: var(--small-size); text-transform: uppercase; letter-spacing: 0.1em;">Exclude</h3>
+                <ul class="bullet-list">
+                    <li>Architecture docs and project history</li>
+                    <li>General coding philosophy</li>
+                    <li>Anything over 150 lines</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="slide-number">06 / 13</div>
+</section>
+
+<!-- =============================================
+     SLIDE 7: FILE ORGANIZATION
+     ============================================= -->
+<section class="slide" data-notes="<span class='note-timing'>10:30 / 2 min</span> — Densest slide, don't read every bullet. Ground in demo: 'stuff/templates vs experiments/templates = pattern 5: co-locate by feature. Agent got silent Success! and didn't know what to do next = pattern 1: every output should prompt the next action.' Quick hits: '300 lines per file, descriptive names, feature-grouped folders. Mechanical changes. Audit in 5 minutes.' Transition: 'Structure gets the agent to the right place. But how does it know if it did the right thing?'">
+    <div class="slide-content">
+        <div class="slide-label reveal">Dimension 2</div>
+        <h2 class="reveal">File Organization <span class="muted">/ five patterns</span></h2>
+        <ol class="numbered-list reveal" style="margin-top: var(--content-gap);">
+            <li><strong>Every output is a prompt</strong> <span class="muted">errors guide the agent's next step</span></li>
+            <li><strong>Self-documenting code</strong> <span class="muted">--help flags and header comments</span></li>
+            <li><strong>Right interface</strong> <span class="muted">CLI for scripting, MCP for tool calls</span></li>
+            <li><strong>Metaphorical interface</strong> <span class="muted">model tools after pytest, kubectl</span></li>
+            <li><strong>Workflows, not concepts</strong> <span class="muted">co-locate by feature, not by layer</span></li>
+        </ol>
+        <div class="highlight-bar reveal" style="margin-top: var(--content-gap);">
+            <p>Max <strong>300 lines</strong> per file. <strong>Descriptive names.</strong> Feature-grouped folders.</p>
+        </div>
+    </div>
+    <div class="slide-number">07 / 13</div>
+</section>
+
+<!-- =============================================
+     SLIDE 8: TEST & VERIFICATION
+     ============================================= -->
+<section class="slide" data-notes="<span class='note-timing'>12:30 / 90s</span> — 'Dimension most teams score lowest on. Not because they don't have tests, but because the agent can rewrite them.' Demo story: 'Version A's test was 1+1=2. Agent could write anything, get green, declare victory. That's theater, not verification.' Confidence spectrum: 'Linters catch formatting, types catch shapes, units catch logic, integration catches wiring, E2E catches behavior. More layers = more trust.' Key insight: 'Test suite is a guardrail, not a scorecard. Protect it like your production database.' Transition: 'Let me hit a few patterns to actively avoid.'">
+    <div class="slide-content">
+        <div class="slide-label reveal">Dimension 3</div>
+        <h2 class="reveal">Test & Verification <span class="muted">/ the confidence spectrum</span></h2>
+        <div class="reveal" style="margin: var(--content-gap) 0;">
+            <div class="spectrum">
+                <div class="spectrum-item">Linters</div>
+                <div class="spectrum-item">Types</div>
+                <div class="spectrum-item">Unit</div>
+                <div class="spectrum-item">Integration</div>
+                <div class="spectrum-item">E2E</div>
+                <div class="spectrum-item">Visual</div>
+            </div>
+            <div class="spectrum-labels">
+                <span>fast, cheap, narrow</span>
+                <span>slow, expensive, comprehensive</span>
+            </div>
+        </div>
+        <div class="highlight-bar reveal">
+            <p><strong>The critical rule:</strong> the agent runs tests. The agent does <strong class="danger">not</strong> write tests.</p>
+        </div>
+        <div class="code-block reveal" style="margin-top: var(--content-gap); max-width: 50ch;">
+<span class="comment"># Anti-pattern: agent "verifies" its own code</span>
+<span class="keyword">def</span> test_tags():
+    <span class="keyword">assert</span> add_tags(1, [<span class="string">"ml"</span>]) <span class="keyword">is not</span> None  <span class="comment"># proves nothing</span></div>
+    </div>
+    <div class="slide-number">08 / 13</div>
+</section>
+
+<!-- =============================================
+     SLIDE 9: ANTI-PATTERNS
+     ============================================= -->
+<section class="slide" data-notes="<span class='note-timing'>14:00 / 60s</span> — Quick hits: 'Five things teams get burned by. Rule-gaming: agent changes ESLint config instead of fixing code. Self-written tests: looks great in CI, breaks on review. Infinite retries: fails, retries, burns tokens. Error swallowing: wraps everything in try/catch. Bloated context: 500-line rules file and agent can't find anything.' These are quick hits, not deep dives. Transition: 'Alright. That's the framework. Now it's your turn.'">
+    <div class="slide-content">
+        <div class="slide-label reveal">Watch out</div>
+        <h2 class="reveal">The Anti-Patterns</h2>
+        <table class="data-table reveal" style="margin-top: var(--content-gap);">
+            <thead>
+                <tr><th>Pattern</th><th>What happens</th><th>Fix</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Rule-gaming</td><td>Agent modifies lint rules instead of fixing code</td><td>Lock config files</td></tr>
+                <tr><td>Self-written tests</td><td>Agent writes tests that pass its own bugs</td><td>Fixed test suite</td></tr>
+                <tr><td>Infinite retries</td><td>Agent retries failing commands, burns tokens</td><td>"Fail twice, stop" rule</td></tr>
+                <tr><td>Error swallowing</td><td>Agent wraps everything in try/catch</td><td>"Let errors surface" rule</td></tr>
+                <tr><td>Bloated context</td><td>500-line CLAUDE.md drowns signal</td><td>150-line limit</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="slide-number">09 / 13</div>
+</section>
+
+<!-- =============================================
+     SLIDE 10: AUDIT SPRINT (instructions + timer)
+     ============================================= -->
+<section class="slide" data-timer="1200" data-notes="<span class='note-timing'>15:00 / 20 min</span> — 'Open the scorecard. Auditing your own code if you brought a repo, Version A if you didn't. Score 0-3 on each dimension. Be honest, this is for you. Write down the one thing you'd fix first.' Logistics: '20 minutes. I'm walking the room. Flag me if stuck.' Start timer. Walk immediately. Note which dimensions score lowest. Help anyone without a repo clone Version A. Check first 2-3 min that people understand rubric. Questions while walking: 'What did you score on rules file?' 'What's your longest file?' 'Does your repo have a test command?' At 2-min warning: 'Two minutes left. Finish scores and write down your #1 quick win.'">
+    <div class="slide-content">
+        <div class="slide-label reveal">Your turn</div>
+        <h2 class="reveal">The Audit Sprint</h2>
+        <div class="instructions-box reveal" style="margin-top: var(--content-gap);">
+            <ol class="numbered-list">
+                <li>Open <code>scorecard.md</code> in the workshop repo</li>
+                <li>Score your repo <strong>0-3</strong> on each dimension</li>
+                <li>Write down your <strong>#1 quick win</strong></li>
+            </ol>
+            <p style="margin-top: 0.5rem; font-size: var(--small-size); color: var(--text-muted);">No repo? Clone Version A and audit that.</p>
+        </div>
+        <div class="reveal" style="display: flex; align-items: center; gap: clamp(0.75rem, 1.5vw, 1.5rem); margin-top: var(--content-gap);">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?data=https%3A%2F%2Fgithub.com%2Fsshh12%2Fcoding-agents-workshop&size=220x220&bgcolor=111111&color=fafafa" alt="QR code to workshop repo" style="width: clamp(80px, 10vw, 120px); height: clamp(80px, 10vw, 120px); border-radius: 4px;">
+            <div>
+                <code style="font-size: var(--h3-size);">github.com/sshh12/coding-agents-workshop</code>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: clamp(1rem, 2vw, 2rem); margin-top: var(--content-gap);" class="reveal">
+            <div class="timer-display" id="timer1" style="font-size: clamp(2.5rem, 7vw, 5rem);">20:00</div>
+            <div class="timer-controls" style="flex-direction: column; margin-top: 0;">
+                <button class="timer-btn" onclick="toggleTimer('timer1', 1200)">start / pause</button>
+                <button class="timer-btn" onclick="resetTimer('timer1', 1200)">reset</button>
+            </div>
+        </div>
+    </div>
+    <div class="slide-number">10 / 13</div>
+</section>
+
+<!-- =============================================
+     SLIDE 11: PAIR AND FIX (instructions + timer)
+     ============================================= -->
+<section class="slide" data-timer="420" data-notes="<span class='note-timing'>35:00 / 7 min</span> — 'Turn to the person next to you. If you're on the end, turn around. If you audited Version A and your neighbor brought their own repo, great, you're fresh eyes on unfamiliar code.' 'Compare scores. Find where you agree and disagree. Pick one quick win and start fixing it. Write the CLAUDE.md. Split the god file. Add the lint rule. Whatever your #1 was, start now.' '7 minutes. I'm walking again.' Rotate between pairs. Questions: 'What did you pick as your quick win?' 'What are you stuck on?' 'Did your partner spot something you missed?' Ready for micro-demos at laptops. Common: 'How to write CLAUDE.md?' (show B's). 'How to split this file?' (feature-grouped pattern). At 1-min mark: 'One minute. Wrap up. I'm pulling up patterns I saw.'">
+    <div class="slide-content">
+        <div class="slide-label reveal">Pair up</div>
+        <h2 class="reveal">Pair and Fix</h2>
+        <ol class="numbered-list reveal" style="margin-top: var(--content-gap);">
+            <li><strong>Compare scores</strong> <span class="muted">Where did you agree? Diverge?</span></li>
+            <li><strong>Pick one quick win</strong> <span class="muted">The single highest-impact fix</span></li>
+            <li><strong>Start implementing</strong> <span class="muted">Actually change the code</span></li>
+        </ol>
+        <p class="reveal muted" style="font-size: var(--small-size); font-style: italic;">If you audited Version A, pair with someone who brought their own repo.</p>
+        <div style="display: flex; align-items: center; gap: clamp(1rem, 2vw, 2rem); margin-top: var(--content-gap);" class="reveal">
+            <div class="timer-display" id="timer2" style="font-size: clamp(2.5rem, 7vw, 5rem);">07:00</div>
+            <div class="timer-controls" style="flex-direction: column; margin-top: 0;">
+                <button class="timer-btn" onclick="toggleTimer('timer2', 420)">start / pause</button>
+                <button class="timer-btn" onclick="resetTimer('timer2', 420)">reset</button>
+            </div>
+        </div>
+    </div>
+    <div class="slide-number">11 / 13</div>
+</section>
+
+<!-- =============================================
+     SLIDE 12: PATTERN DEBRIEF
+     ============================================= -->
+<section class="slide" data-notes="<span class='note-timing'>42:00-52:00 / 10 min</span> — Second live coding moment. 'I talked to about 30 of you. Here's what I saw.' Name 2-3 most common issues. Live-demo the fix on Version A. If top issue is 'no rules file,' write a CLAUDE.md live: 'Test command: pytest. Repo map. Definition of done.' Show it's 20-30 lines. If god files, open 500-line app.py and show how to split into experiments/routes.py, models.py, etc. 2-3 min per fix. <strong>FALLBACK:</strong> Narrate verbally and show Version B code as the 'after' state.">
+    <div class="slide-content">
+        <div class="slide-label reveal">Debrief</div>
+        <h2 class="reveal">What I saw walking the room</h2>
+        <p class="reveal muted" style="font-style: italic; margin-bottom: var(--content-gap);">Filled in live from the audit and pair sprints</p>
+        <div class="dimension-stack reveal">
+            <div class="dimension-card">
+                <div class="dimension-num" style="color: var(--danger);">1</div>
+                <div class="dimension-text">
+                    <h3>&nbsp;</h3>
+                    <p>&nbsp;</p>
+                </div>
+            </div>
+            <div class="dimension-card">
+                <div class="dimension-num" style="color: var(--danger);">2</div>
+                <div class="dimension-text">
+                    <h3>&nbsp;</h3>
+                    <p>&nbsp;</p>
+                </div>
+            </div>
+            <div class="dimension-card">
+                <div class="dimension-num" style="color: var(--danger);">3</div>
+                <div class="dimension-text">
+                    <h3>&nbsp;</h3>
+                    <p>&nbsp;</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="slide-number">12 / 13</div>
+</section>
+
+<!-- =============================================
+     SLIDE 13: TAKEAWAY
+     ============================================= -->
+<section class="slide" data-notes="<span class='note-timing'>52:00-60:00 / 8 min</span> — 'Volunteers. 2 minutes each. What did you score, what did you find, what's the one thing you're fixing next week?' Point to people from your walk. If nobody volunteers: 'I talked to someone in the back who found a 1,200-line god file. Want to tell us about that?' After shares, close fast: 'Here's the repo. Scorecard is in there. Both demo app versions. My blog goes deeper on all of this.' One-sentence close: 'Your agent isn't broken. Your codebase is. Go fix it.' Don't linger. Thank audience, leave QR up, step away. blog.sshh.io for more.">
+    <div class="slide-content">
+        <div class="slide-label reveal">Close</div>
+        <h2 class="reveal">Volunteers. 2 minutes each.</h2>
+        <p class="reveal" style="font-size: var(--h3-size); margin-top: var(--content-gap);"><strong>What's the one thing you're fixing next week?</strong></p>
+        <div style="margin-top: clamp(2rem, 4vh, 4rem);">
+            <div class="reveal" style="border-top: 1px solid #222; padding-top: var(--content-gap);">
+                <h3 class="accent" style="font-size: var(--small-size); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: clamp(0.5rem, 1vh, 0.75rem);">Resources</h3>
+                <ul class="bullet-list">
+                    <li><strong>Workshop repo:</strong> <code>github.com/sshh12/coding-agents-workshop</code></li>
+                    <li><strong>Scorecard:</strong> <code>scorecard.md</code> in the repo</li>
+                    <li><strong>Blog:</strong> <code>blog.sshh.io</code></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="slide-number">13 / 13</div>
+</section>
+
+<script>
+    /* ===========================================
+       SLIDE PRESENTATION CONTROLLER
+       Handles navigation, progress, animations
+       =========================================== */
+    class SlidePresentation {
+        constructor() {
+            this.slides = document.querySelectorAll('.slide');
+            this.currentSlide = 0;
+            this.isScrolling = false;
+
+            this.buildNavDots();
+            this.setupIntersectionObserver();
+            this.setupKeyboardNav();
+            this.setupTouchNav();
+            this.setupNotesToggle();
+            this.updateProgress();
+        }
+
+        buildNavDots() {
+            const nav = document.getElementById('navDots');
+            this.slides.forEach((_, i) => {
+                const dot = document.createElement('div');
+                dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+                dot.addEventListener('click', () => this.goToSlide(i));
+                nav.appendChild(dot);
+            });
+        }
+
+        setupIntersectionObserver() {
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            const index = [...this.slides].indexOf(entry.target);
+                            this.currentSlide = index;
+                            this.updateNavDots();
+                            this.updateProgress();
+                            this.updateSpeakerNotes();
+                        }
+                    });
+                },
+                { threshold: 0.5 }
+            );
+            this.slides.forEach(slide => observer.observe(slide));
+        }
+
+        setupKeyboardNav() {
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+                    e.preventDefault();
+                    this.next();
+                } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    this.prev();
+                } else if (e.key === 'n' || e.key === 'N') {
+                    this.toggleNotes();
+                }
+            });
+        }
+
+        setupTouchNav() {
+            let startY = 0;
+            document.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; });
+            document.addEventListener('touchend', (e) => {
+                const diff = startY - e.changedTouches[0].clientY;
+                if (Math.abs(diff) > 50) {
+                    diff > 0 ? this.next() : this.prev();
+                }
+            });
+        }
+
+        setupNotesToggle() {
+            document.getElementById('notesToggle').addEventListener('click', () => this.toggleNotes());
+        }
+
+        toggleNotes() {
+            document.getElementById('speakerNotes').classList.toggle('visible');
+            this.updateSpeakerNotes();
+        }
+
+        updateSpeakerNotes() {
+            const notes = this.slides[this.currentSlide]?.dataset.notes || '';
+            document.getElementById('speakerNotes').innerHTML = notes;
+        }
+
+        next() {
+            if (this.currentSlide < this.slides.length - 1) {
+                this.goToSlide(this.currentSlide + 1);
+            }
+        }
+
+        prev() {
+            if (this.currentSlide > 0) {
+                this.goToSlide(this.currentSlide - 1);
+            }
+        }
+
+        goToSlide(index) {
+            this.slides[index].scrollIntoView({ behavior: 'smooth' });
+        }
+
+        updateNavDots() {
+            document.querySelectorAll('.nav-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === this.currentSlide);
+            });
+        }
+
+        updateProgress() {
+            const progress = ((this.currentSlide + 1) / this.slides.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+    }
+
+    /* ===========================================
+       TIMER FUNCTIONALITY
+       For audit and pair sprint slides
+       =========================================== */
+    const timers = {};
+
+    function formatTime(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+    }
+
+    function toggleTimer(id, duration) {
+        if (!timers[id]) {
+            timers[id] = { remaining: duration, interval: null, running: false };
+        }
+
+        const timer = timers[id];
+        if (timer.running) {
+            clearInterval(timer.interval);
+            timer.running = false;
+        } else {
+            timer.running = true;
+            timer.interval = setInterval(() => {
+                timer.remaining--;
+                document.getElementById(id).textContent = formatTime(timer.remaining);
+                if (timer.remaining <= 0) {
+                    clearInterval(timer.interval);
+                    timer.running = false;
+                    document.getElementById(id).style.color = 'var(--danger)';
+                    document.getElementById(id).textContent = '00:00';
+                }
+                /* Flash accent at 2-minute warning */
+                if (timer.remaining === 120) {
+                    document.getElementById(id).style.color = '#fbbf24';
+                    setTimeout(() => {
+                        if (timer.remaining > 0) {
+                            document.getElementById(id).style.color = 'var(--accent)';
+                        }
+                    }, 3000);
+                }
+            }, 1000);
+        }
+    }
+
+    function resetTimer(id, duration) {
+        if (timers[id]) {
+            clearInterval(timers[id].interval);
+        }
+        timers[id] = { remaining: duration, interval: null, running: false };
+        const el = document.getElementById(id);
+        el.textContent = formatTime(duration);
+        el.style.color = 'var(--accent)';
+    }
+
+    /* Initialize */
+    new SlidePresentation();
+</script>
+</body>
+</html>
