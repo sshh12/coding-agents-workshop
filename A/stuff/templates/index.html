@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ML Experiment Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { font-size: 1.8em; margin-bottom: 5px; }
+        .subtitle { color: #666; margin-bottom: 20px; }
+        .stats-row { display: flex; gap: 20px; margin-bottom: 20px; }
+        .stat-card { background: white; border-radius: 8px; padding: 20px; flex: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .stat-card .number { font-size: 2em; font-weight: bold; color: #0d6efd; }
+        .stat-card .label { color: #666; font-size: 0.9em; }
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card h2 { font-size: 1.2em; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { font-weight: 600; color: #555; font-size: 0.85em; text-transform: uppercase; }
+        a { color: #0d6efd; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .activity-item { padding: 10px 0; border-bottom: 1px solid #eee; }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-meta { font-size: 0.8em; color: #999; }
+        .chart-container { position: relative; height: 250px; }
+        .empty-state { text-align: center; padding: 40px; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ML Experiment Tracker</h1>
+        <p class="subtitle">Dashboard</p>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="number">{{ total_experiments }}</div>
+                <div class="label">Experiments</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">{{ total_runs }}</div>
+                <div class="label">Total Runs</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div>
+                <div class="card">
+                    <h2>Experiments</h2>
+                    {% if experiments %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Runs</th>
+                                <th>Best Accuracy</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exp in experiments %}
+                            <tr>
+                                <td><a href="/experiments/{{ exp.id }}">{{ exp.name }}</a></td>
+                                <td>{{ exp.status_badge | safe }}</td>
+                                <td>{{ exp.total_runs }}</td>
+                                <td>{{ exp.best_accuracy }}</td>
+                                <td>{{ exp.created_at }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty-state">No experiments yet. Create one via the API.</div>
+                    {% endif %}
+                </div>
+
+                <div class="card">
+                    <h2>Accuracy Overview</h2>
+                    <div class="chart-container">
+                        <canvas id="accuracyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <h2>Recent Activity</h2>
+                    {% if recent_activity %}
+                    {% for item in recent_activity %}
+                    <div class="activity-item">
+                        <strong>{{ item.run_name }}</strong> on
+                        <a href="/experiments/{{ item.experiment_id }}">{{ item.experiment_name }}</a>
+                        <br>
+                        <span class="activity-meta">Accuracy: {{ item.accuracy }} &middot; {{ item.created_at }}</span>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state">No recent activity.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const labels = {{ chart_labels | safe }};
+        const accuracies = {{ chart_accuracy | safe }};
+        const losses = {{ chart_loss | safe }};
+
+        if (labels.length > 0) {
+            new Chart(document.getElementById('accuracyChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Avg Accuracy',
+                            data: accuracies,
+                            backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                        },
+                        {
+                            label: 'Avg Loss',
+                            data: losses,
+                            backgroundColor: 'rgba(220, 53, 69, 0.6)',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

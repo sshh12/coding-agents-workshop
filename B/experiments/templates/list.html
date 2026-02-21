@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Experiments - ML Experiment Tracker{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/">Dashboard</a> &gt; Experiments
+</div>
+<h1>All Experiments</h1>
+
+<div class="card">
+    {% if experiments %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Runs</th>
+                <th>Best Accuracy</th>
+                <th>Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exp in experiments %}
+            <tr>
+                <td><a href="/experiments/{{ exp.id }}">{{ exp.name }}</a></td>
+                <td>{{ exp.status_badge | safe }}</td>
+                <td>{{ exp.total_runs }}</td>
+                <td>{{ exp.best_accuracy }}</td>
+                <td>{{ exp.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">No experiments yet.</div>
+    {% endif %}
+</div>
+{% endblock %}

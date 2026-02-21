@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}{{ run.name }} - ML Experiment Tracker{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/">Dashboard</a> &gt;
+    <a href="/experiments/{{ experiment.id }}">{{ experiment.name }}</a> &gt;
+    {{ run.name }}
+</div>
+
+<h1>{{ run.name }}</h1>
+<div class="meta">
+    Status: {{ run.status }} &middot; Created {{ run.created_at }}
+</div>
+
+<div class="card">
+    <h2>Metrics</h2>
+    <table>
+        <tr><th>Accuracy</th><td>{{ run.accuracy_fmt }}</td></tr>
+        <tr><th>Loss</th><td>{{ run.loss_fmt }}</td></tr>
+        <tr><th>Latency</th><td>{{ run.latency_fmt }}</td></tr>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Hyperparameters</h2>
+    <pre>{{ run.hyperparameters_str }}</pre>
+</div>
+
+{% if run.notes %}
+<div class="card">
+    <h2>Notes</h2>
+    <p>{{ run.notes }}</p>
+</div>
+{% endif %}
+{% endblock %}

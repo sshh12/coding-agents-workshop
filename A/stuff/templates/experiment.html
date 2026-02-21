@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ experiment.name }} - ML Experiment Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .breadcrumb { margin-bottom: 15px; font-size: 0.9em; }
+        .breadcrumb a { color: #0d6efd; text-decoration: none; }
+        h1 { font-size: 1.8em; margin-bottom: 5px; }
+        .meta { color: #666; margin-bottom: 20px; }
+        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card h2 { font-size: 1.2em; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { font-weight: 600; color: #555; font-size: 0.85em; text-transform: uppercase; }
+        a { color: #0d6efd; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .chart-container { position: relative; height: 300px; }
+        .actions { margin-bottom: 20px; }
+        .btn { display: inline-block; padding: 8px 16px; background: #0d6efd; color: white; border-radius: 4px; text-decoration: none; font-size: 0.9em; }
+        .btn:hover { background: #0b5ed7; text-decoration: none; }
+        .description { color: #555; margin-bottom: 20px; line-height: 1.5; }
+        .empty-state { text-align: center; padding: 40px; color: #999; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 0.85em; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="/">Dashboard</a> &gt; {{ experiment.name }}
+        </div>
+
+        <h1>{{ experiment.name }}</h1>
+        <div class="meta">
+            {{ experiment.status_badge | safe }} &middot;
+            Created {{ experiment.created_at }} &middot;
+            Updated {{ experiment.updated_at }}
+        </div>
+
+        {% if experiment.description %}
+        <p class="description">{{ experiment.description }}</p>
+        {% endif %}
+
+        <div class="actions">
+            <a href="/experiments/{{ experiment.id }}/compare" class="btn">Compare Runs</a>
+        </div>
+
+        <div class="card">
+            <h2>Runs</h2>
+            {% if runs %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Accuracy</th>
+                        <th>Loss</th>
+                        <th>Latency</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in runs %}
+                    <tr>
+                        <td>{{ run.name }}</td>
+                        <td>{{ run.status_badge | safe }}</td>
+                        <td>{{ run.accuracy_fmt }}</td>
+                        <td>{{ run.loss_fmt }}</td>
+                        <td>{{ run.latency_fmt }}</td>
+                        <td>{{ run.created_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">No runs yet. Log a run via the API.</div>
+            {% endif %}
+        </div>
+
+        {% if runs %}
+        <div class="card">
+            <h2>Metrics</h2>
+            <div class="chart-container">
+                <canvas id="metricsChart"></canvas>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if runs %}
+    <script>
+        const labels = {{ run_labels | safe }};
+        const accuracies = {{ run_accuracies | safe }};
+        const losses = {{ run_losses | safe }};
+        const latencies = {{ run_latencies | safe }};
+
+        new Chart(document.getElementById('metricsChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Accuracy',
+                        data: accuracies,
+                        borderColor: 'rgba(13, 110, 253, 1)',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                    },
+                    {
+                        label: 'Loss',
+                        data: losses,
+                        borderColor: 'rgba(220, 53, 69, 1)',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

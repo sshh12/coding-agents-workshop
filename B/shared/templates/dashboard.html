@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - ML Experiment Tracker{% endblock %}
+
+{% block content %}
+<h1>ML Experiment Tracker</h1>
+<p class="subtitle">Dashboard</p>
+
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="number">{{ total_experiments }}</div>
+        <div class="label">Experiments</div>
+    </div>
+    <div class="stat-card">
+        <div class="number">{{ total_runs }}</div>
+        <div class="label">Total Runs</div>
+    </div>
+</div>
+
+<div class="grid">
+    <div>
+        <div class="card">
+            <h2>Experiments</h2>
+            {% if experiments %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Runs</th>
+                        <th>Best Accuracy</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exp in experiments %}
+                    <tr>
+                        <td><a href="/experiments/{{ exp.id }}">{{ exp.name }}</a></td>
+                        <td>{{ exp.status_badge | safe }}</td>
+                        <td>{{ exp.total_runs }}</td>
+                        <td>{{ exp.best_accuracy }}</td>
+                        <td>{{ exp.created_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">No experiments yet. Create one via the API.</div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h2>Accuracy Overview</h2>
+            <div class="chart-container">
+                <canvas id="accuracyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="card">
+            <h2>Recent Activity</h2>
+            {% if recent_activity %}
+            {% for item in recent_activity %}
+            <div class="activity-item">
+                <strong>{{ item.run_name }}</strong> on
+                <a href="/experiments/{{ item.experiment_id }}">{{ item.experiment_name }}</a>
+                <br>
+                <span class="activity-meta">Accuracy: {{ item.accuracy }} &middot; {{ item.created_at }}</span>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">No recent activity.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const labels = {{ chart_labels | safe }};
+    const accuracies = {{ chart_accuracy | safe }};
+    const losses = {{ chart_loss | safe }};
+
+    if (labels.length > 0) {
+        new Chart(document.getElementById('accuracyChart'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Avg Accuracy',
+                        data: accuracies,
+                        backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                    },
+                    {
+                        label: 'Avg Loss',
+                        data: losses,
+                        backgroundColor: 'rgba(220, 53, 69, 0.6)',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+</script>
+{% endblock %}

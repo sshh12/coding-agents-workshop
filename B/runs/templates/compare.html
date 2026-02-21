@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Runs - {{ experiment.name }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/">Dashboard</a> &gt;
+    <a href="/experiments/{{ experiment.id }}">{{ experiment.name }}</a> &gt;
+    Compare Runs
+</div>
+
+<h1>Compare Runs: {{ experiment.name }}</h1>
+
+{% if runs %}
+<div class="card">
+    <h2>Metrics Comparison</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Run</th>
+                <th>Accuracy</th>
+                <th>Loss</th>
+                <th>Latency</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for run in runs %}
+            <tr>
+                <td>{{ run.name }}</td>
+                <td>{{ run.accuracy_fmt }}</td>
+                <td>{{ run.loss_fmt }}</td>
+                <td>{{ run.latency_fmt }}</td>
+                <td>{{ run.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if hp_keys %}
+<div class="card">
+    <h2>Hyperparameters</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Run</th>
+                {% for key in hp_keys %}
+                <th>{{ key }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for run in runs %}
+            <tr>
+                <td>{{ run.name }}</td>
+                {% for key in hp_keys %}
+                <td>{{ run.hyperparameters.get(key, 'N/A') }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div class="card">
+        <h2>Accuracy Comparison</h2>
+        <div class="chart-container" style="height: 300px;">
+            <canvas id="accuracyChart"></canvas>
+        </div>
+    </div>
+    <div class="card">
+        <h2>Loss Comparison</h2>
+        <div class="chart-container" style="height: 300px;">
+            <canvas id="lossChart"></canvas>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">No runs to compare. Log runs via POST /api/experiments/{{ experiment.id }}/runs</div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if runs %}
+<script>
+    const labels = {{ run_labels | safe }};
+    const accuracies = {{ run_accuracies | safe }};
+    const losses = {{ run_losses | safe }};
+
+    new Chart(document.getElementById('accuracyChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Accuracy',
+                data: accuracies,
+                backgroundColor: 'rgba(13, 110, 253, 0.6)',
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 1 } } }
+    });
+
+    new Chart(document.getElementById('lossChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Loss',
+                data: losses,
+                backgroundColor: 'rgba(220, 53, 69, 0.6)',
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+    });
+</script>
+{% endif %}
+{% endblock %}
