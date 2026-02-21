@@ -64,6 +64,7 @@ coding-agents-workshop/
 
 ## Workshop Materials
 
+- **[Slides](https://html-preview.github.io/?url=https://github.com/sshh12/coding-agents-workshop/blob/main/slides.html)** -- Full slide deck (press N for speaker notes, arrow keys to navigate)
 - **[scorecard.md](scorecard.md)** -- Score your codebase 0-9 across three dimensions. Bring this up during the audit sprint.
 - **[race.md](race.md)** -- Narrator notes for the live agent race demo. Two terminals, same prompt, different codebases.
 
