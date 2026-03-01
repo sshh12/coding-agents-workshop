@@ -810,6 +810,15 @@
 POST /api/experiments/{id}/tags and
 show tags on the detail page.
 Follow existing patterns. Run tests."</span></div>
+        <div class="reveal" style="margin-top: var(--content-gap); text-align: center;">
+            <video id="race-video" src="https://github.com/sshh12/coding-agents-workshop/raw/refs/heads/main/race-side-by-side.mp4" style="max-width: 90%; max-height: 45vh; border-radius: 8px; cursor: pointer; border: 1px solid #333;" onclick="this.paused ? this.play() : this.pause()" preload="metadata"></video>
+            <div style="margin-top: 0.5rem; display: flex; gap: 0.75rem; justify-content: center;">
+                <button class="timer-btn" onclick="var v=document.getElementById('race-video'); v.paused ? v.play() : v.pause()">play / pause</button>
+                <button class="timer-btn" onclick="document.getElementById('race-video').requestFullscreen()">fullscreen</button>
+                <button class="timer-btn" onclick="var v=document.getElementById('race-video'); v.currentTime=0; v.pause()">reset</button>
+            </div>
+            <p style="font-size: var(--small-size); color: var(--text-muted); margin-top: 0.25rem;">Pre-recorded fallback &mdash; click play or run live</p>
+        </div>
     </div>
     <div class="slide-number">04 / 17</div>
 </section>
