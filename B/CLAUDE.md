@@ -32,6 +32,8 @@ Before submitting, all of these must pass:
 2. `ruff check .` exits 0 (no lint errors)
 3. No new dependencies added to requirements.txt without asking
 4. Existing tests are not modified or deleted
+5. If pytest fails, read the error, fix it, run again. Do not modify the test to make it pass.
+6. Existing tests in tests/ are the source of truth -- they are never modified or deleted.
 
 ## Coding Conventions
 

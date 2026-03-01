@@ -207,6 +207,153 @@ SQL injection shouldn't be an issue because we use SQLAlchemy for most queries, 
 - Implement experiment archival
 - Add bulk operations (delete multiple experiments, etc.)
 
+## Environment Variables
+
+The following environment variables can be set in a `.env` file (DO NOT commit this file):
+
+- `DATABASE_URL` - Override the default SQLite path. Default: `sqlite:///./experiments.db`
+- `SECRET_KEY` - Used for session signing. Default: hardcoded in config.py (change in production)
+- `DEBUG` - Set to "true" for debug mode. Default: "false"
+- `PORT` - Override the default port. Default: 8000
+- `LOG_LEVEL` - Logging level. Default: "INFO". Options: DEBUG, INFO, WARNING, ERROR
+- `ENABLE_TAGS` - Feature flag for tags. See config.py. Default: false
+- `ENABLE_EXPORTS` - Feature flag for CSV/JSON export. Default: false
+- `MAX_RUNS_PER_EXPERIMENT` - Limit to prevent runaway experiments. Default: 10000
+- `CHART_COLORS` - Comma-separated hex colors for Chart.js. Default: built-in palette
+- `CORS_ORIGINS` - Allowed CORS origins, comma-separated. Default: "*" (don't do this in prod)
+- `TEMPLATE_RELOAD` - Auto-reload Jinja2 templates on change. Default: "true" in debug
+- `SEED_ON_STARTUP` - Run seed data function on app start. Default: "false"
+- `STATIC_FILE_CACHE` - Cache-Control max-age for static files. Default: 3600
+- `SESSION_TIMEOUT` - Session timeout in seconds. Default: 86400 (24 hours)
+
+Note: Not all of these are actually implemented yet. Some were planned but never hooked up. Check config.py to see which ones actually work.
+
+## Branching Strategy
+
+We don't have a formal branching strategy. People work on `main` mostly. Sometimes someone creates a feature branch but they usually just push directly. We tried GitHub Flow for a while but it was too much process for a 3-person team.
+
+Branches that might still exist:
+- `graphql-experiment` - Alex's abandoned GraphQL attempt
+- `flask-original` - The old Flask version (before Maria's migration)
+- `alembic-setup` - Maria's unfinished Alembic migration setup
+- `dashboard-v2` - A redesign attempt that was abandoned
+- `feature/export-csv` - Half-finished CSV export. Might conflict with current code.
+- `hotfix/memory-leak` - Attempted fix for the memory leak. Didn't actually fix it.
+- `experiment/redis-cache` - POC for caching with Redis. Never tested properly.
+
+Please don't delete these branches in case someone needs to reference them later.
+
+## Internal Conventions
+
+### Naming Conventions
+- Database tables: lowercase, plural (experiments, runs)
+- Python files: lowercase with underscores
+- Template files: lowercase with underscores, in stuff/ directory
+- API endpoints: /api/ prefix for JSON, / prefix for HTML pages
+- Helper functions: in h.py (historical reasons, don't ask)
+- Test files: test_ prefix
+- Config: all caps with underscores in config.py
+
+### Error Response Format
+This is inconsistent across the codebase. Ideally we'd standardize on:
+```json
+{"error": "Human-readable message", "code": "MACHINE_CODE"}
+```
+But in practice you'll see:
+- `{"error": "message"}` - in newer endpoints
+- `{"detail": "message"}` - FastAPI default for HTTPException
+- Plain strings - in some older endpoints
+- `{"message": "text", "status": "error"}` - in a few API endpoints Maria wrote
+- Sometimes just a 500 with no body at all
+
+### Database Conventions
+- Primary keys: `id` column, autoincrement integer
+- Timestamps: `created_at` column, stored as ISO 8601 string (not a proper datetime column, sorry)
+- Foreign keys: `{table_name}_id` format (e.g., `experiment_id`)
+- Soft delete: Not implemented, but we talked about it. Just hard delete for now.
+
+### Template Conventions
+- Base template: `stuff/templates/base.html` (all pages should extend this)
+- In practice: some pages extend base, some don't
+- Chart.js loaded from CDN in base template
+- Inline CSS in each template (we never set up a proper CSS pipeline)
+
+## Data Model Reference
+
+### experiments table
+| Column | Type | Notes |
+|--------|------|-------|
+| id | INTEGER | Primary key, autoincrement |
+| name | TEXT | Required, unique |
+| description | TEXT | Optional |
+| status | TEXT | "running", "completed", "failed" |
+| created_at | TEXT | ISO 8601 timestamp |
+
+### runs table
+| Column | Type | Notes |
+|--------|------|-------|
+| id | INTEGER | Primary key, autoincrement |
+| experiment_id | INTEGER | Foreign key -> experiments.id |
+| metrics | TEXT | JSON-encoded dict of metric values |
+| params | TEXT | JSON-encoded dict of parameters |
+| created_at | TEXT | ISO 8601 timestamp |
+
+### experiment_tags table
+| Column | Type | Notes |
+|--------|------|-------|
+| id | INTEGER | Primary key, autoincrement |
+| experiment_id | INTEGER | Foreign key -> experiments.id |
+| name | TEXT | Tag name |
+| created_at | TEXT | ISO 8601 timestamp |
+
+Note: The tags table might not actually exist in all database instances. It depends on when the db was created. See TAGS_MIGRATION_PLAN.md for the messy history.
+
+## Metrics and Monitoring
+
+We don't have any formal metrics or monitoring. Things we've thought about adding:
+- Request latency tracking (see utils/metrics.py for some abandoned code)
+- Error rate monitoring
+- Database query performance logging
+- Memory usage tracking (related to the memory leak)
+- API usage analytics
+
+There's some code in utils/metrics.py that was supposed to be the start of a metrics system but it's not hooked up to anything real. Don't rely on it. Also see the MetricTag class in there which is for classifying metric types — this is NOT related to experiment tags despite the similar naming. It's a completely separate concept that was going to be part of a monitoring dashboard.
+
+## Testing Philosophy
+
+The current test suite is minimal. The main test file (tests/test_app.py) has a basic smoke test that verifies the app can start and respond to requests, plus a trivial assertion test. This is not ideal but reflects the reality that nobody has had time to write proper tests.
+
+If you're adding tests, consider:
+- Use pytest (it's already in requirements)
+- The test database should be separate from development (use in-memory SQLite)
+- Test both success and error cases
+- Don't test implementation details, test behavior
+- Integration tests > unit tests for this codebase (there aren't many pure functions to unit test)
+
+We tried to set up test fixtures once but it was confusing with the SQLAlchemy session management. The current approach is to just create and tear down data within each test.
+
+## Build & Release Process
+
+There's no formal build or release process. Deployment is manual:
+1. Pull latest from main
+2. Install/update dependencies: `pip install -r requirements.txt`
+3. Run the app: `python app.py`
+4. Pray
+
+For Docker:
+1. Build: `docker build -t experiment-tracker .`
+2. Run: `docker run -p 8000:8000 experiment-tracker`
+(Note: The Dockerfile might be out of date)
+
+We don't have CI/CD. We talked about setting up GitHub Actions but never got around to it. The plan was to at least run the tests on push, but since the tests barely test anything, it didn't seem urgent.
+
+## Related Projects and Tools
+
+- `ml-pipeline` - Our ML training pipeline. Experiments created there should eventually show up in the tracker (not implemented yet)
+- `data-catalog` - Data governance tool. We wanted to link datasets to experiments (not implemented)
+- `model-registry` - Where deployed models live. Should reference experiment IDs (partially implemented via manual copy-paste)
+- `notebook-server` - JupyterHub instance. Some notebooks call the tracker API to log results (works but fragile)
+
 ## Changelog
 
 ### v0.1 (Jan 2024)
@@ -224,16 +371,102 @@ SQL injection shouldn't be an issue because we use SQLAlchemy for most queries, 
 - Bug fixes
 - Moved templates to stuff/ folder (temporary? permanent?)
 
-### v0.4 (Current)
+### v0.4 (Oct 2024)
 - Various bug fixes
 - Some API endpoints moved to api_stuff/
 - Helper functions extracted to h.py
+- Started tags feature (abandoned, see TAGS_MIGRATION_PLAN.md)
+
+### v0.5 (Current - Jan 2025)
+- Maintenance mode
+- Added ENABLE_TAGS and ENABLE_EXPORTS feature flags
+- Minor UI cleanup on dashboard
+- Updated requirements.txt
+- Still no proper tests
 
 ## Misc
 
 If something breaks, try deleting the database file and restarting. That fixes most issues. If the templates look weird, clear your browser cache. If the API returns weird errors, check that the Content-Type header is set correctly.
 
 The code quality varies quite a bit across the codebase because it was written by different people at different times under different constraints. Please don't judge us too harshly. We know it needs work.
+
+## Glossary
+
+- **Experiment**: A named container for a series of runs. Think of it as a project or a campaign.
+- **Run**: A single execution of a model training or evaluation job, with metrics and parameters.
+- **Metric**: A key-value pair representing a measurement (e.g., accuracy=0.95, loss=0.23).
+- **Parameter**: A key-value pair representing a configuration setting (e.g., learning_rate=0.001).
+- **Tag**: A label attached to an experiment for categorization. See TAGS_MIGRATION_PLAN.md. (Note: "tag" also means different things in different parts of the codebase. utils/metrics.py has MetricTag which is unrelated. tags_v2.py has an alternative implementation. config.py has a feature flag. It's confusing, sorry.)
+- **Dashboard**: The Chart.js visualization page showing experiment comparisons.
+- **God file**: What we affectionately call app.py. It has everything in it.
+
+## API Endpoint Reference (Partial)
+
+These are the endpoints we know about. There may be others. Check app.py and api_stuff/ for the full picture.
+
+### Experiments
+- `GET /api/experiments` - List all experiments. Returns JSON array.
+- `GET /api/experiments/{id}` - Get single experiment. Returns JSON object.
+- `POST /api/experiments` - Create experiment. Body: `{"name": "...", "description": "..."}`.
+- `PUT /api/experiments/{id}` - Update experiment. Partial update supported (maybe).
+- `DELETE /api/experiments/{id}` - Delete experiment and all associated runs.
+- `GET /experiments` - HTML page listing all experiments.
+- `GET /experiments/{id}` - HTML detail page for single experiment.
+
+### Runs
+- `GET /api/experiments/{id}/runs` - List runs for an experiment.
+- `POST /api/experiments/{id}/runs` - Create a run. Body: `{"metrics": {...}, "params": {...}}`.
+- `GET /api/runs/{id}` - Get a single run. (Does this exist? Check app.py.)
+- `DELETE /api/runs/{id}` - Delete a run. (Might not be implemented.)
+- `GET /experiments/{id}/compare` - HTML comparison page for experiment runs.
+
+### Tags (status unclear)
+- `GET /api/experiments/{id}/tags` - List tags. Might work, might not.
+- `POST /api/experiments/{id}/tags` - Add a tag. Probably not implemented yet.
+- `DELETE /api/experiments/{id}/tags/{tag_id}` - Remove a tag. Definitely not implemented.
+- See also: tags_v2.py which uses `/labels` instead of `/tags` (don't ask).
+- See also: TAGS_MIGRATION_PLAN.md for the whole messy story.
+- See also: config.py `ENABLE_TAGS` flag.
+
+### Dashboard
+- `GET /dashboard` - Main dashboard with Chart.js visualizations.
+- `GET /api/dashboard/data` - JSON data for dashboard charts. (May or may not exist.)
+
+### Utility
+- `GET /api/health` - Health check. Returns `{"status": "ok"}`.
+- `POST /api/seed` - Seed sample data. Don't run in production.
+
+Note: Some endpoints in api_stuff/ might shadow or conflict with endpoints defined in app.py. The FastAPI router order determines which one wins. We haven't verified there are no conflicts.
+
+## File Map
+
+```
+A/
+├── app.py                    # Main application (THE god file - ~600 lines)
+├── config.py                 # Configuration and feature flags
+├── requirements.txt          # Python dependencies
+├── tags_v2.py               # Alternative tag implementation (ON HOLD)
+├── TAGS_MIGRATION_PLAN.md   # Tag migration docs (ON HOLD)
+├── CLAUDE.md                # This file
+├── api_stuff/               # Some API helpers (unclear boundary with app.py)
+│   ├── exp_helpers.py       # Experiment helper functions
+│   └── misc.py              # Miscellaneous utilities
+├── utils/                   # Utility modules
+│   ├── h.py                 # Helper functions (cryptic names, sorry)
+│   └── metrics.py           # Metrics utilities + MetricTag (NOT experiment tags)
+├── stuff/                   # Templates directory (yes, it's called "stuff")
+│   └── templates/           # Jinja2 templates
+│       ├── base.html
+│       ├── experiments.html
+│       ├── experiment.html
+│       ├── compare.html
+│       └── dashboard.html
+├── tests/                   # Test directory (barely populated)
+│   └── test_app.py          # Smoke test + trivial assertion
+└── .venv/                   # Virtual environment (don't commit)
+```
+
+Note: This file map might not be 100% accurate. Files get added and removed without updating this doc.
 
 ## Contact
 

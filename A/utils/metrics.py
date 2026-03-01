@@ -92,6 +92,86 @@ def add_tag(experiment_id, tag):
     finally:
         conn.close()
 
+# ============================================================
+# Metric tags - for categorizing metric types (NOT experiment tags)
+# This is separate from the experiment tagging feature in app.py.
+# Metric tags classify what KIND of metric a value represents,
+# e.g. "primary", "secondary", "debug", "cost".
+# See also: tags_v2.py for the experiment-level tagging system,
+#           api_stuff/exp_helpers.py validate_tag_data() for tag validation
+# ============================================================
+
+class MetricTag:
+    """A tag that classifies a metric type. NOT the same as experiment tags.
+
+    MetricTags are used to categorize metrics (accuracy, loss, etc.) into
+    groups for dashboard filtering. Don't confuse with:
+      - experiment_tags table (app.py Tag model)
+      - tags_csv column (tags_v2.py CSV approach)
+      - tag validation in api_stuff/exp_helpers.py
+    """
+    VALID_CATEGORIES = ["primary", "secondary", "debug", "cost", "latency", "custom"]
+
+    def __init__(self, metric_name, category="primary", display_name=None):
+        self.metric_name = metric_name
+        self.category = category if category in self.VALID_CATEGORIES else "custom"
+        self.display_name = display_name or metric_name
+        self.created_at = datetime.utcnow()
+
+    def to_dict(self):
+        return {
+            "metric_name": self.metric_name,
+            "category": self.category,
+            "display_name": self.display_name,
+            "tag": f"{self.category}:{self.metric_name}",  # composite tag string
+        }
+
+
+def add_metric_tag(experiment_id, metric_name, category="primary"):
+    """Register a metric tag for an experiment's metric.
+
+    NOT related to experiment tags (app.py /tags endpoint).
+    This tags the METRIC ITSELF, not the experiment.
+    Stored in metric_tags table (if it exists).
+    """
+    conn = get_conn()
+    try:
+        conn.execute(
+            "INSERT INTO metric_tags (experiment_id, metric_name, category) VALUES (?, ?, ?)",
+            [experiment_id, metric_name, category]
+        )
+        conn.commit()
+        return True
+    except:
+        return False  # table probably doesn't exist yet
+    finally:
+        conn.close()
+
+
+def get_metric_tags(experiment_id):
+    """Get metric tags for an experiment.
+
+    Returns metric classification tags, NOT experiment tags.
+    For experiment tags, see:
+      - app.py get_tags() endpoint (v1, uses experiment_tags table)
+      - tags_v2.py get_labels() route (v2, uses tags_csv column)
+    """
+    conn = get_conn()
+    try:
+        cursor = conn.execute(
+            "SELECT metric_name, category FROM metric_tags WHERE experiment_id = ?",
+            [experiment_id]
+        )
+        return [
+            MetricTag(row[0], row[1]).to_dict()
+            for row in cursor.fetchall()
+        ]
+    except:
+        return []  # table probably doesn't exist yet
+    finally:
+        conn.close()
+
+
 # Export function that was requested but never properly integrated
 def export_experiment(experiment_id, format="json"):
     """export experiment data - only json works, csv is broken"""

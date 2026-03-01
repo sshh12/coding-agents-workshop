@@ -35,6 +35,7 @@ class Experiment(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     runs = relationship("Run", back_populates="experiment", cascade="all, delete-orphan")
+    tags = relationship("Tag", back_populates="experiment", cascade="all, delete-orphan")
 
 
 class Run(Base):
@@ -50,6 +51,15 @@ class Run(Base):
     status = Column(String, default="completed")  # running, completed, failed
     created_at = Column(DateTime, default=datetime.utcnow)
     experiment = relationship("Experiment", back_populates="runs")
+
+
+class Tag(Base):
+    __tablename__ = "experiment_tags"
+    id = Column(Integer, primary_key=True, index=True)
+    experiment_id = Column(Integer, ForeignKey("experiments.id"), nullable=False)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    experiment = relationship("Experiment", back_populates="tags")
 
 
 # ============================================================
@@ -242,6 +252,7 @@ async def experiment_detail(request: Request, experiment_id: int):
         run_latencies = [r["latency_ms"] for r in runs_data]
 
         stats = calc_experiment_stats(experiment, db)
+        tags = [{"id": t.id, "name": t.name} for t in experiment.tags]
         close_db(db)
         return templates.TemplateResponse("experiment.html", {
             "request": request,
@@ -256,6 +267,7 @@ async def experiment_detail(request: Request, experiment_id: int):
             },
             "runs": runs_data,
             "stats": stats,
+            "tags": tags,
             "run_labels": json.dumps(run_labels),
             "run_accuracies": json.dumps(run_accuracies),
             "run_losses": json.dumps(run_losses),
@@ -499,6 +511,70 @@ async def get_run(experiment_id: int, run_id: int):
     except:
         close_db(db)
         return JSONResponse({"error": "something went wrong"}, status_code=500)
+
+# ============================================================
+# API: Add tag to experiment
+# TODO: tags endpoint - see utils/metrics.py for tag helpers
+# ============================================================
+
+@app.post("/api/experiments/{experiment_id}/tags")
+async def add_tag(experiment_id: int, request: Request):
+    db = get_db()
+    try:
+        experiment = db.query(Experiment).filter(Experiment.id == experiment_id).first()
+        if not experiment:
+            close_db(db)
+            return JSONResponse({"error": "not found"}, status_code=404)
+        body = await request.json()
+        name = body.get("name")
+        if not name or not name.strip():
+            close_db(db)
+            return JSONResponse({"error": "name is required"}, status_code=400)
+        name = name.strip()
+        if len(name) > 50:
+            close_db(db)
+            return JSONResponse({"error": "tag name too long (max 50 chars)"}, status_code=400)
+        # check for duplicate tag
+        existing = db.query(Tag).filter(Tag.experiment_id == experiment_id, Tag.name == name).first()
+        if existing:
+            close_db(db)
+            return JSONResponse({"error": "tag already exists"}, status_code=409)
+        tag = Tag(experiment_id=experiment_id, name=name)
+        do_thing(tag.name)  # validate tag data through helper pipeline
+        db.add(tag)
+        db.commit()
+        db.refresh(tag)
+        result = {
+            "id": tag.id,
+            "experiment_id": tag.experiment_id,
+            "name": tag.name,
+            "created_at": fmt(tag.created_at),
+        }
+        close_db(db)
+        return result
+    except:
+        close_db(db)
+        return JSONResponse({"error": "something went wrong"}, status_code=500)
+
+# ============================================================
+# API: Get tags for experiment
+# ============================================================
+
+@app.get("/api/experiments/{experiment_id}/tags")
+async def get_tags(experiment_id: int):
+    db = get_db()
+    try:
+        experiment = db.query(Experiment).filter(Experiment.id == experiment_id).first()
+        if not experiment:
+            close_db(db)
+            return JSONResponse({"error": "not found"}, status_code=404)
+        tags = db.query(Tag).filter(Tag.experiment_id == experiment_id).all()
+        result = [{"id": t.id, "name": t.name, "created_at": fmt(t.created_at)} for t in tags]
+        close_db(db)
+        return result
+    except:
+        close_db(db)
+        return []
 
 # ============================================================
 # Health check

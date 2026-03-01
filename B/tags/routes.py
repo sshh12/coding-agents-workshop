@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from experiments.models import Experiment
 from shared.db import get_db
 from tags.models import Tag
-from tags.schemas import TagCreate, TagResponse
+from tags.schemas import TagCreate, TagResponse  # noqa: F401 – TagCreate used by TODO endpoint below
 
 router = APIRouter()
 
@@ -40,7 +40,9 @@ def list_tags(experiment_id: int, db: Session = Depends(get_db)):
     ]
 
 
-# TODO: Add POST /api/experiments/{experiment_id}/tags endpoint
-# Should accept a TagCreate body, validate the experiment exists,
-# check for duplicate tag names, and return 201 with TagResponse.
-# Follow the pattern in runs/routes.py create_run() for reference.
+# TODO: Add POST endpoint for creating tags.
+# Follow the pattern in runs/routes.py (see create_run function).
+# Accept TagCreate schema as JSON body.
+# Return TagResponse with status_code=201.
+# Handle 404 (experiment not found) and 409 (duplicate tag name).
+# See tests/test_tags.py for expected behavior and response format.

@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
@@ -16,7 +15,6 @@ from sqlalchemy.orm import Session
 
 from experiments.models import Experiment, ExperimentStatus
 from experiments.schemas import ExperimentCreate, ExperimentResponse
-from runs.models import Run
 from shared.db import get_db
 
 router = APIRouter()
@@ -197,6 +195,7 @@ def experiment_detail_page(request: Request, experiment_id: int, db: Session = D
                 "status_badge": _status_badge(experiment.status),
                 "created_at": _format_dt(experiment.created_at),
                 "updated_at": _format_dt(experiment.updated_at),
+                "tags": [{"name": tag.name} for tag in experiment.tags],
             },
             "runs": runs_data,
             "stats": stats,

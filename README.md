@@ -57,7 +57,7 @@ coding-agents-workshop/
   README.md           # You are here
   scorecard.md        # AI-Readiness Audit (use during the workshop)
   race.md             # Agent Race narrator notes
-  slides.md           # Workshop slides
+  slides.html         # Workshop slides (speaker notes embedded as HTML comments)
   A/                  # "Before" -- messy demo app (deliberate anti-patterns)
   B/                  # "After"  -- agent-optimized (same functionality)
 ```

@@ -55,21 +55,30 @@ pytest
 ### Version A (The Struggle)
 
 **Agent reads the CLAUDE.md** (0:00-0:30)
-- The rules file is ~240 lines of rambling project history
-- No runnable commands, no repo map
-- Agent gets no useful signal from it
+- The rules file is ~500 lines of rambling project history, meeting notes, and an outdated file map
+- No runnable commands, no repo map that's useful
+- Agent gets no useful signal from it — just burns tokens
 
 **Agent searches for the right files** (0:30-2:00)
-- Looks at `app.py` (500+ lines, everything in one file)
-- Finds `api_stuff/misc.py` with some routes randomly placed there
+- Looks at `app.py` (600+ lines, everything in one file)
+- Greps for "tags" and finds **9 files** with conflicting concepts:
+  - `config.py` — `ENABLE_TAGS` flag + misleading comment pointing to `tags_v2.py`
+  - `tags_v2.py` — abandoned CSV-based tag implementation using `/labels` endpoint
+  - `TAGS_MIGRATION_PLAN.md` — dead-end migration doc (status: ON HOLD)
+  - `utils/metrics.py` — `MetricTag` class (NOT experiment tags, but name collision)
+  - `utils/metrics.py` — raw SQL `get_tags()` / `add_tag()` with wrong column names
+  - `api_stuff/exp_helpers.py` — `validate_tag_data()` expecting different field names
+  - `app.py` — misleading TODO comment pointing to `utils/metrics.py` for "tag helpers"
+  - `app.py` — `do_thing()` call forcing trace through cryptic `h.py`
 - Discovers templates are in `stuff/templates/`, not where you'd expect
 - May read `h.py` and have no idea what `do_thing()` or `fmt()` do
 
 **Agent attempts implementation** (2:00-4:00)
-- Has to figure out where to add the endpoint: `app.py`? `api_stuff/misc.py`?
+- Has to reconcile 8+ different "stories" about how tags work
+- Has to figure out where to add the endpoint: `app.py`? `api_stuff/misc.py`? `tags_v2.py`?
 - No schemas or models to follow as a pattern; everything is inline dicts and raw strings
 - Status is a raw string, no enum to reference for how tags should work
-- May break the god file by editing in the wrong place
+- May follow the misleading breadcrumbs to `tags_v2.py` or `TAGS_MIGRATION_PLAN.md`
 
 **Agent tries to test** (4:00-5:00)
 - Finds `tests/test_app.py` which only tests `1+1==2`
@@ -79,41 +88,43 @@ pytest
 
 **Narration points:**
 - "Notice how much time the agent spends just figuring out WHERE things are"
-- "It found the templates in `stuff/templates/` -- not exactly discoverable"
+- "It grepped 'tags' and got hits in 9 files with 8 different meanings — that's the trap"
+- "It found `tags_v2.py` and `TAGS_MIGRATION_PLAN.md` — dead ends that waste time"
 - "The only test is `1+1==2`. The agent has no verification to run."
 - "It's guessing at patterns because there are no schemas or enums to follow"
 
 ### Version B (The Flow)
 
 **Agent reads the CLAUDE.md** (0:00-0:15)
-- 50 lines, crisp
+- ~50 lines, crisp
 - Sees exact commands: `python manage.py run`, `pytest`, `ruff check .`
-- Sees repo map: `experiments/` for experiment code, `runs/` for run code
+- Sees repo map: `experiments/` for experiment code, `runs/` for run code, `tags/` for tags
 - Knows the definition of done: tests pass, ruff clean, no new deps
+- Sees explicit rules: "do not modify tests", "if pytest fails, read the error and fix it"
 
 **Agent finds the right files immediately** (0:15-0:45)
-- Goes to `experiments/` folder (obvious from name)
-- Reads `experiments/models.py` -- sees SQLAlchemy model with header comment
-- Reads `experiments/schemas.py` -- sees Pydantic schemas with typed enums
-- Reads `experiments/routes.py` -- sees the pattern for endpoints
+- Goes to `tags/` folder (obvious from name and CLAUDE.md repo map)
+- Reads `tags/routes.py` — sees GET endpoint + detailed TODO comment for POST
+- TODO says: follow pattern in `runs/routes.py`, accept `TagCreate`, return `TagResponse` with 201
+- Reads `runs/routes.py` to see the pattern
+- Model and schema already exist — just needs the route
 
-**Agent implements the feature** (0:45-2:30)
-- Adds a `Tag` model following the existing model pattern
-- Adds a Pydantic schema for tags
-- Adds `POST /api/experiments/{id}/tags` following the route pattern
-- Updates `experiments/templates/detail.html` to display tags
-- Everything is co-located: model, schema, route, template all in `experiments/`
+**Agent implements the feature** (0:45-2:00)
+- Implements `POST /api/experiments/{id}/tags` following the runs pattern
+- Handles 404 (experiment not found) and 409 (duplicate tag)
+- ~20-30 lines of code, all in `tags/routes.py`
+- Everything is signposted: TODO told it what to do, pattern file told it how
 
-**Agent runs verification** (2:30-3:30)
-- Runs `pytest` -- existing tests still pass
-- Runs `ruff check .` -- no lint errors
-- May add new tests following the pattern in `test_experiments.py`
+**Agent runs verification** (2:00-3:00)
+- Runs `pytest` — all 28 tests pass (including the 4 tag tests that were failing)
+- Runs `ruff check .` — no lint errors
+- Done. Clean exit.
 
 **Narration points:**
-- "The agent went straight to `experiments/` -- the folder name told it exactly where to look"
-- "It's following the existing schema pattern. Typed enums, Pydantic validation."
-- "Notice it found the template right next to the route. Co-location."
-- "Tests pass. Lint passes. The agent verified its own work."
+- "The agent went straight to `tags/` — the CLAUDE.md told it exactly where to look"
+- "It found a TODO comment that was basically a spec: endpoint, schema, status codes, test file"
+- "It followed the pattern from `runs/routes.py`. Copy, adapt, done."
+- "All 28 tests pass. The agent didn't write tests — it made the existing ones pass."
 
 ---
 
@@ -137,9 +148,10 @@ If the live demo fails (network issues, agent misbehaves, etc.):
 1. **First option:** Say "Let me show you what this looked like when I ran it earlier" and switch to a pre-recorded screencast of the race.
 
 2. **Second option:** Walk through the two codebases side by side manually:
-   - Show `A/app.py` (500+ lines) vs `B/experiments/routes.py` (~80 lines)
-   - Show `A/CLAUDE.md` (300+ lines of noise) vs `B/CLAUDE.md` (50 lines of signal)
-   - Show `A/tests/test_app.py` (`assert 1+1==2`) vs `B/tests/test_experiments.py` (real tests)
+   - Show `A/app.py` (600+ lines) vs `B/tags/routes.py` (~40 lines with TODO)
+   - Show `A/CLAUDE.md` (~500 lines of noise) vs `B/CLAUDE.md` (50 lines of signal)
+   - Show `A/` grep for "tag" → 9 files vs `B/tags/` → everything in one place
+   - Show `A/tests/test_app.py` (`assert 1+1==2`) vs `B/tests/test_tags.py` (4 real failing tests as spec)
    - Ask: "If you were an agent, which codebase would you rather work in?"
 
 3. **Key point either way:** The difference isn't the agent. It's the codebase. Same model, same prompt, wildly different outcomes.

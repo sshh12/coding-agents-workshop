@@ -81,7 +81,8 @@ def create_app() -> FastAPI:
             desc = exp.description or ""
             if len(desc) > 100:
                 desc = desc[:100] + "..."
-            fmt_dt = lambda dt: dt.strftime("%Y-%m-%d %H:%M") if dt else ""
+            def fmt_dt(dt):
+                return dt.strftime("%Y-%m-%d %H:%M") if dt else ""
 
             exp_data.append(
                 {

@@ -15,6 +15,8 @@ PORT = int(os.environ.get("PORT", "8080"))   # NOTE: app.py hardcodes 8000
 
 # Feature flags (from the time we tried feature flags, most aren't checked anywhere)
 ENABLE_TAGS = os.environ.get("ENABLE_TAGS", "false").lower() == "true"
+# When ENABLE_TAGS is true, tag endpoints registered via tags_v2.py router
+# (uses /labels endpoint, not /tags — see TAGS_MIGRATION_PLAN.md for details)
 ENABLE_EXPORT = os.environ.get("ENABLE_EXPORT", "false").lower() == "true"
 ENABLE_AUTH = os.environ.get("ENABLE_AUTH", "false").lower() == "true"
 ENABLE_METRICS_AGG = True  # always on, but the feature is half-built
