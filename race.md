@@ -77,6 +77,7 @@ pytest
 - Has to reconcile 8+ different "stories" about how tags work
 - Has to figure out where to add the endpoint: `app.py`? `api_stuff/misc.py`? `tags_v2.py`?
 - No schemas or models to follow as a pattern; everything is inline dicts and raw strings
+- No type hints, no Pydantic schemas, status is raw strings, `h.py` accepts/returns `Any`, bare `except: pass` swallows errors
 - Status is a raw string, no enum to reference for how tags should work
 - May follow the misleading breadcrumbs to `tags_v2.py` or `TAGS_MIGRATION_PLAN.md`
 
@@ -91,7 +92,8 @@ pytest
 - "It grepped 'tags' and got hits in 9 files with 8 different meanings — that's the trap"
 - "It found `tags_v2.py` and `TAGS_MIGRATION_PLAN.md` — dead ends that waste time"
 - "The only test is `1+1==2`. The agent has no verification to run."
-- "It's guessing at patterns because there are no schemas or enums to follow"
+- "No types, no schemas, no enums. The agent is guessing at every interface shape."
+- "Bare `except: pass` blocks — errors are invisible. The agent can't self-correct."
 
 ### Version B (The Flow)
 
@@ -112,6 +114,7 @@ pytest
 **Agent implements the feature** (0:45-2:00)
 - Implements `POST /api/experiments/{id}/tags` following the runs pattern
 - Handles 404 (experiment not found) and 409 (duplicate tag)
+- Full type hints everywhere, Pydantic schemas define exact shapes, enums for status, ruff configured, explicit HTTPException with descriptive messages
 - ~20-30 lines of code, all in `tags/routes.py`
 - Everything is signposted: TODO told it what to do, pattern file told it how
 
@@ -124,6 +127,7 @@ pytest
 - "The agent went straight to `tags/` — the CLAUDE.md told it exactly where to look"
 - "It found a TODO comment that was basically a spec: endpoint, schema, status codes, test file"
 - "It followed the pattern from `runs/routes.py`. Copy, adapt, done."
+- "Pydantic schemas are doing the heavy lifting. The agent knows exactly what fields to pass."
 - "All 28 tests pass. The agent didn't write tests — it made the existing ones pass."
 
 ---

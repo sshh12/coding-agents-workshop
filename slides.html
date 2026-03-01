@@ -731,9 +731,10 @@
      instinct is always the same: write more documentation. Bigger CLAUDE.mds.
      Longer rules files. This is a trap. The unlock is the opposite: redesign your
      software with the agent as the primary user." Transition: "I'm going to show
-     you exactly what this looks like. Live."
+     you exactly what this looks like. Live." Mental model: "If a brand-new intern
+     couldn't navigate your repo and ship the feature, neither can the agent."
 -->
-<section class="slide" data-notes="<span class='note-timing'>0:30 / 60s</span> — 'By now, nearly every one of you has seen an agent write a perfect unit test or churn out flawless boilerplate on a brand new project. But ask it to do something real on your actual codebase, and there's this frustrating glass ceiling. The agent gets lost, misses context, fails to navigate your code.' Pause. 'Our first instinct is always the same: write more documentation. Bigger CLAUDE.mds. Longer rules files. This is a trap. The unlock is the opposite: redesign your software with the agent as the primary user.' Transition: 'I'm going to show you exactly what this looks like. Live.'">
+<section class="slide" data-notes="<span class='note-timing'>0:30 / 60s</span> — 'By now, nearly every one of you has seen an agent write a perfect unit test or churn out flawless boilerplate on a brand new project. But ask it to do something real on your actual codebase, and there's this frustrating glass ceiling. The agent gets lost, misses context, fails to navigate your code.' Pause. 'Our first instinct is always the same: write more documentation. Bigger CLAUDE.mds. Longer rules files. This is a trap. The unlock is the opposite: redesign your software with the agent as the primary user.' Mental model: 'If a brand-new intern couldn't navigate your repo and ship the feature, neither can the agent.' Transition: 'I'm going to show you exactly what this looks like. Live.'">
     <div class="slide-content">
         <div class="slide-label reveal">The problem</div>
         <h2 class="reveal">Agents crush greenfield.<br>They hit a wall on <span class="accent">real codebases</span>.</h2>
@@ -741,6 +742,7 @@
             <li>You write more docs, bigger CLAUDE.mds, longer prompts</li>
             <li>The trap: bloated rules files and longer prompts that drown the agent in noise</li>
             <li><strong class="accent">The reframe: redesign the codebase for the agent</strong></li>
+            <li>The mental model: <strong>10,000 interns with 1 week of context</strong> &mdash; design for that</li>
         </ul>
     </div>
     <div class="slide-number">02 / 16</div>
@@ -883,7 +885,7 @@ Follow existing patterns. Run tests."</span></div>
      "But even the best rules file can't save you if the agent can't find
      anything."
 -->
-<section class="slide" data-notes="<span class='note-timing'>9:00 / 90s</span> — 'The rules file is the single highest-leverage thing you can add. Most common mistake: making it too long. Past 150 lines, agent loses signal. Think of it as a cheat sheet for a new hire on day one, not the employee handbook.' Reference demo: 'Version B had 50 lines: test command, repo map, definition of done. That was enough.' Mention progressive disclosure for monorepos. Transition: 'But even the best rules file can't save you if the agent can't find anything.'">
+<section class="slide" data-notes="<span class='note-timing'>9:00 / 90s</span> — 'The rules file is the single highest-leverage thing you can add. Most common mistake: making it too long. Past 150 lines, agent loses signal. Think of it as a cheat sheet for a new hire on day one, not the employee handbook.' Reference demo: 'Version B had 50 lines: test command, repo map, definition of done. That was enough.' Mention progressive disclosure for monorepos. CLI-first: 'Agents interact via CLI and code, never GUIs. If your deployment requires clicking a button in a dashboard, the agent is blocked. Every workflow — test, lint, deploy, check status — must be a headless command.' Transition: 'But even the best rules file can't save you if the agent can't find anything.'">
     <div class="slide-content">
         <div class="slide-label reveal">Dimension 1</div>
         <h2 class="reveal">Rules File & Agent Config <span class="muted">/ the 200-line rule</span></h2>
@@ -895,6 +897,7 @@ Follow existing patterns. Run tests."</span></div>
                     <li>Repo map: where entrypoints, configs, tests live</li>
                     <li>Definition of done: what must be true before agent stops</li>
                     <li>Hard boundaries: "do not touch tests", "ask before adding deps"</li>
+                    <li>CLI-first &mdash; every agent action must be a shell command, not a GUI click</li>
                 </ul>
             </div>
             <div class="reveal">
@@ -933,7 +936,7 @@ Follow existing patterns. Run tests."</span></div>
      per-package rules for the monorepo lead. Progressive disclosure: root file
      navigates, package files give local rules."
 -->
-<section class="slide" data-notes="<span class='note-timing'>10:30 / 60s</span> — 'Two real personas I see all the time. The ML engineer with no CLAUDE.md at all — agent burns tokens inventing conventions. And the monorepo lead with a 600-line root CLAUDE.md where the agent in packages/billing never sees the billing rules.' Quick wins: '30-line CLAUDE.md for the ML engineer, trim root to 50 lines and add per-package rules for the monorepo lead.' Key insight: 'Progressive disclosure. Root file = navigation. Package files = local rules.'">
+<section class="slide" data-notes="<span class='note-timing'>10:30 / 60s</span> — 'Two real personas I see all the time. The ML engineer with no CLAUDE.md at all — agent burns tokens inventing conventions. And the monorepo lead with a 600-line root CLAUDE.md where the agent in packages/billing never sees the billing rules.' Quick wins: '30-line CLAUDE.md for the ML engineer, trim root to 50 lines and add per-package rules for the monorepo lead.' For monorepo leads, there's a second issue: CI coupling. If every PR triggers a full monorepo build, the agent generates a PR in 5 minutes and waits 45 for CI. Key insight: 'Progressive disclosure. Root file = navigation. Package files = local rules.'">
     <div class="slide-content">
         <div class="slide-label reveal">Dimension 1 &mdash; Personas</div>
         <h2 class="reveal">Rules File Personas</h2>
@@ -953,6 +956,7 @@ Follow existing patterns. Run tests."</span></div>
                     <li>600-line root <code>CLAUDE.md</code> covering every package</li>
                     <li>Agent in <code>packages/billing</code> never sees billing-specific rules</li>
                     <li>Root noise drowns the signal for every sub-team</li>
+                    <li>CI bottlenecked by build graph coupling &mdash; agent waits 45 min for feedback</li>
                 </ul>
                 <p style="margin-top: clamp(0.5rem, 1vh, 0.75rem); font-size: var(--small-size); color: var(--accent);"><strong>Quick win:</strong> Trim root to 50 lines, add per-package <code>.claude/rules/</code></p>
             </div>
@@ -1052,7 +1056,7 @@ Follow existing patterns. Run tests."</span></div>
      failures at the end." Transition: "Before we move on, let me hit a few
      patterns to actively avoid."
 -->
-<section class="slide" data-notes="<span class='note-timing'>14:30 / 90s</span> — 'Dimension most teams score lowest on. Not because they don't have tests, but because the agent can rewrite them.' Demo story: 'Version A's test was 1+1=2. Agent could write anything, get green, declare victory. That's theater, not verification.' Confidence spectrum: 'Linters catch formatting, types catch shapes, units catch logic, integration catches wiring, E2E catches behavior. More layers = more trust.' Key insight: 'Test suite is a guardrail, not a scorecard. Protect it like your production database.' Transition: 'Let me hit a few patterns to actively avoid.'">
+<section class="slide" data-notes="<span class='note-timing'>14:30 / 90s</span> — 'Dimension most teams score lowest on. Not because they don't have tests, but because the agent can rewrite them.' Demo story: 'Version A's test was 1+1=2. Agent could write anything, get green, declare victory. That's theater, not verification.' Confidence spectrum: 'Linters catch formatting, types catch shapes, units catch logic, integration catches wiring, E2E catches behavior. More layers = more trust.' Key insight: 'Test suite is a guardrail, not a scorecard. Protect it like your production database.' Human validation: 'Even if the agent fixes a bug in 5 minutes, the change sits waiting for a human. The goal is shifting from human reviews every line to human reviews the 5% automated checks can't catch.' Transition: 'Let me hit a few patterns to actively avoid.'">
     <div class="slide-content">
         <div class="slide-label reveal">Dimension 3</div>
         <h2 class="reveal">Test & Verification <span class="muted">/ the confidence spectrum</span></h2>
@@ -1071,11 +1075,13 @@ Follow existing patterns. Run tests."</span></div>
             </div>
         </div>
         <div class="reveal" style="margin-top: var(--content-gap);">
-            <h3 style="font-size: var(--small-size); text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: clamp(0.5rem, 1vh, 0.75rem);">Three principles</h3>
+            <h3 style="font-size: var(--small-size); text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: clamp(0.5rem, 1vh, 0.75rem);">Five principles</h3>
             <ol class="numbered-list">
                 <li><strong>Baseline tests are immutable.</strong> <span class="muted">Protect existing tests from agent modification.</span></li>
                 <li><strong>Agents write new tests, test-first.</strong> <span class="muted">TDD for agents: write the failing test, then implement.</span></li>
                 <li><strong>Hooks close the feedback loop.</strong> <span class="muted">PostToolUse hooks auto-run lint, types, and tests after every edit.</span></li>
+                <li><strong>Type the world.</strong> <span class="muted">Strict types, Pydantic schemas, enums over strings &mdash; static analysis is the cheapest trust lever.</span></li>
+                <li><strong>Human validation is a speed limit.</strong> <span class="muted">Automate verification, reserve humans for judgment.</span></li>
             </ol>
         </div>
         <div class="highlight-bar reveal" style="margin-top: var(--content-gap);">

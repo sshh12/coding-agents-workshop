@@ -8,7 +8,7 @@ python manage.py seed         # Load sample data
 python manage.py migrate      # Create/update database tables
 python manage.py check        # Run all checks (ruff + pytest)
 pytest                        # Run test suite
-ruff check .                  # Lint
+ruff check .                  # Lint — runs automatically after every edit via PostToolUse hook
 ```
 
 ## Repo Map
@@ -41,6 +41,7 @@ Before submitting, all of these must pass:
 - Schemas: Pydantic BaseModel in `{feature}/schemas.py`
 - Routes: FastAPI APIRouter in `{feature}/routes.py`, mounted in `manage.py`
 - Templates: Jinja2 in `{feature}/templates/`, extend `shared/templates/base.html`
+- Types: all function signatures have type hints. Use Pydantic schemas for all API request/response bodies.
 - Status fields: use the `ExperimentStatus` / `RunStatus` enums, never raw strings
 - Every file starts with a 4-line header comment (path, purpose, why, relevant files)
 

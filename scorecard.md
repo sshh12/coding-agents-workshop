@@ -32,7 +32,7 @@ Score your codebase 0-3 on each dimension. Max score: 9.
 | 0 | **Agent gets lost.** Mixed-concern god files (routing + DB + logic + rendering in one file). Cryptic or abbreviated names (`er.py`, `utils2.py`, `stuff/`). No consistent structure. Errors are silent or swallowed. |
 | 1 | **Agent finds things eventually.** Some modularization but inconsistent. Naming is mostly descriptive but has outliers. Code organized by layer (`models/`, `views/`, `utils/`) rather than feature. Errors exist but don't guide next steps. |
 | 2 | **Agent navigates confidently.** Files are single-concern (one module, one feature slice). Names are descriptive and greppable (`experiment_routes.py`). Co-located by feature. Error messages say what went wrong and suggest what to do. |
-| 3 | **Agent reasons about structure.** All of 2, plus: files have header comments with purpose and related files. Typed interfaces (enums, schemas) encode valid states. Error messages include resolution steps. Folder structure mirrors the domain. |
+| 3 | **Agent reasons about structure.** All of 2, plus: files have header comments with purpose and related files. Typed interfaces (enums, schemas) with strict static types encode valid states. Error messages include resolution steps. Folder structure mirrors the domain. |
 
 ### Audit Questions
 
@@ -41,6 +41,8 @@ Score your codebase 0-3 on each dimension. Max score: 9.
 - Can an agent find the right file by name alone, without reading any code?
 - Do your error messages tell the agent what to do next, or just what went wrong?
 - Do your files have header comments that explain purpose and link to related files?
+- Are all developer workflows available as CLI commands, or do some require a GUI?
+- Does your code use strict static types (MyPy, TypeScript strict) and schemas (Pydantic, Zod)?
 
 ---
 
@@ -51,7 +53,7 @@ Score your codebase 0-3 on each dimension. Max score: 9.
 | 0 | No tests, or tests the agent can freely modify/delete. No lint or type checking configured. |
 | 1 | Tests exist and agent can run them, but no protection against test modification. Test commands may not be documented. No distinction between baseline and new tests. |
 | 2 | **Baseline test suite is protected** (agent cannot modify existing tests). Agent can write NEW test files for new features. Clear test commands in rules file. Lint/type-check configured as guardrails. |
-| 3 | All of 2, plus: PostToolUse hooks auto-run verification after every edit (lint + types + targeted tests). Multi-layer pipeline: format, lint, type-check, unit, integration. CI on agent PRs with stricter gates. |
+| 3 | All of 2, plus: PostToolUse hooks auto-run verification after every edit (lint + types + targeted tests). Multi-layer pipeline: format, lint, type-check, unit, integration. CI on agent PRs with stricter gates. Automated proof of correctness reduces human review surface. |
 
 ### Audit Questions
 
@@ -60,6 +62,7 @@ Score your codebase 0-3 on each dimension. Max score: 9.
 - Can the agent write NEW tests for new features? (It should.)
 - How many verification layers does the agent hit? (lint, types, unit, integration, e2e)
 - Do you have hooks that auto-run verification after every file edit?
+- Does every change require a human to verify, or can automated checks prove correctness for routine changes?
 
 ---
 
