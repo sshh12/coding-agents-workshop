@@ -140,6 +140,63 @@ pytest
 
 ---
 
+## Timestamped Highlights (from recorded race)
+
+Timestamps based on screen recordings (`A.mov` = 43s, `B.mov` = 76s). Side-by-side video: `race-side-by-side.mp4`.
+
+### Version A — Frame-by-Frame
+
+| Time | What's on screen | Narrator cue |
+|------|-----------------|--------------|
+| 0:03 | Reads `config.py`, starts thinking | "It skipped straight past the 500-line CLAUDE.md — no useful signal there anyway" |
+| 0:04 | Reads `tests/test_app.py` | "It found the tests — `1+1==2`. That's all it has to work with." |
+| 0:05 | Reads `requirements.txt` | "It sees Pydantic in the requirements but there are no schemas anywhere to follow" |
+| 0:07 | Declares "I have a clear picture" | "Seven seconds in and it thinks it understands the codebase. It never searched for 'tags'. Never read `h.py`. Never found `tags_v2.py`." |
+| 0:09 | Writes `ExperimentTag` model in `app.py` | "Everything goes into the god file. Model, routes, all in `app.py`." |
+| 0:14 | POST and GET tag endpoints written | "It built the endpoints — but look: it never called `sanitize()` on the tag name. The existing code has `sanitize(name)` with a security comment. The agent missed the pattern." |
+| 0:17 | Updates experiment detail route + template | "It's wiring up the template — finding the `stuff/` folder. Adding CSS inline." |
+| 0:21 | Template done with tag pill badges | "Tags render as badges. But the template is getting more inline CSS dumped in." |
+| 0:26 | Rewrites entire test file — 11 new tests | "Here it is — it deleted the 3 placeholder tests and wrote 11 of its own. The self-grading trap. These tests validate *its* code." |
+| 0:28 | `python -m pytest` → command not found | "First test attempt fails — `python` not on PATH. Minor, but B won't have this problem." |
+| 0:29 | `.venv/bin/python -m pytest` → no module | "Second attempt — pytest isn't installed in the venv." |
+| 0:30 | `pip install pytest httpx` | "Third attempt: installing its own test dependencies. B had this from the start." |
+| 0:36 | Tests finally running | "On the third try, tests are running." |
+| 0:38 | All 11 tests pass. Done. | "11 tests pass. But they're the agent's own tests. It wrote the code *and* the grade. That's the fundamental problem." |
+
+### Version B — Frame-by-Frame
+
+| Time | What's on screen | Narrator cue |
+|------|-----------------|--------------|
+| 0:01 | CLAUDE.md auto-loaded | "CLAUDE.md is loaded before any tool calls. 50 lines — repo map, commands, definition of done." |
+| 0:05 | Spawns exploration sub-agent | "It spawns a focused sub-agent to scan the codebase. Structured approach." |
+| 0:10 | Reads `runs/routes.py` | "Ten seconds in — already reading the pattern file. It knows where to look." |
+| 0:12 | Runs `find` on `tags/` directory | "Twelve seconds in — found the `tags/` directory. The CLAUDE.md told it exactly where to look." |
+| 0:14 | Reads `tags/models.py` | "It found the pre-built tag model. The scaffolding is already in place." |
+| 0:19 | Reads experiment detail template | "Reading the template where tags will be displayed. Also checks `pyproject.toml` for lint config." |
+| 0:47 | Exploration sub-agent finishes (33 tool calls, 45k tokens) | "48 seconds of exploration — 33 parallel reads. It has full context on the entire codebase." |
+| 0:58 | "The TODO comment spells out exactly what's needed" | "This is the money quote. The agent explicitly says: the TODO told it what to build. The scaffolding worked." |
+| 1:01 | Implementation: `create_tag` endpoint in `tags/routes.py` | "One file. Pydantic schemas for validation. `HTTPException` with descriptive messages. 404, 409, 201 — all handled." |
+| 1:04 | Cleans up `# noqa: F401` comment on import | "A nice detail — it removed the lint suppression comment because `TagCreate` is now actually used." |
+| 1:05 | `pytest tests/test_tags.py` → `python` not found | "Same PATH issue as A — but watch what happens next." |
+| 1:07 | 6 tag tests pass | "Six tag tests pass on the first real run. Including the 4 pre-written ones that were failing before." |
+| 1:09 | All 28 tests pass + `ruff check .` clean | "28 tests pass. Ruff clean. One file changed. Done." |
+| 1:13 | Summary: lists what it built vs what was already there | "Look at the summary — it acknowledges what was already in place: model, schema, template, router. It only had to write the endpoint." |
+
+### Key Contrasts to Call Out
+
+| Moment | Version A | Version B |
+|--------|-----------|-----------|
+| First useful action | 0:03 — reads `config.py` | 0:05 — spawns structured exploration |
+| Finds tag-related code | 0:07 — claims "clear picture" without searching | 0:12 — finds `tags/` directory, reads model |
+| Implementation starts | 0:09 — dumps model + routes into god file | 1:01 — adds 1 endpoint to `tags/routes.py` |
+| Files changed | 3 (app.py, template, tests) | 1 (tags/routes.py) |
+| Test approach | 0:26 — rewrites test file (self-grading) | 1:07 — makes pre-written tests pass |
+| Test env issues | 3 attempts (no python, no pytest, pip install) | 2 attempts (no python, then works) |
+| sanitize() pattern | Copies `sanitize()` into tag endpoint | Uses Pydantic schemas — nothing broken to copy |
+| Total time | 38s (fast, but unverified) | 1m 12s (thorough, verified) |
+
+---
+
 ## Timing
 
 | Phase | Expected Time |
@@ -157,7 +214,7 @@ Both agents often finish at roughly the same time — sometimes A is faster. **D
 
 If the live demo fails (network issues, agent misbehaves, etc.):
 
-1. **First option:** Say "Let me show you what this looked like when I ran it earlier" and switch to a pre-recorded screencast of the race.
+1. **First option:** Say "Let me show you what this looked like when I ran it earlier" and play `race-side-by-side.mp4` (A and B stitched side by side with headers). Use the timestamped highlights above to narrate.
 
 2. **Second option:** Walk through the two codebases side by side manually:
    - Show `A/app.py` (600+ lines) vs `B/tags/routes.py` (~40 lines with TODO)
@@ -176,7 +233,7 @@ If the live demo fails (network issues, agent misbehaves, etc.):
 - [ ] B's tests pass (`pytest` in `B/`)
 - [ ] Both terminals visible on projector
 - [ ] Font size large enough for back of room
-- [ ] Pre-recorded backup video ready
+- [ ] Pre-recorded backup video ready (`race-side-by-side.mp4`)
 - [ ] Git state clean in both directories
 - [ ] Prompt copied to clipboard, ready to paste
 
