@@ -717,7 +717,42 @@
             <div><span>March 3, 2026</span></div>
         </div>
     </div>
-    <div class="slide-number">01 / 16</div>
+    <div class="slide-number">01 / 17</div>
+</section>
+
+<!-- =============================================
+     SLIDE 1.5: ABOUT ME
+     =============================================
+     SPEAKER NOTES: Quick intro, 15-20 seconds max. Don't linger. Establish
+     credibility, then move on. "Quick intro — I'm Shrivu, staff eng and VP of AI
+     strategy at Abnormal. We do AI-native email security. I set technical
+     direction for about 300 engineers in a space where vibe coding will get you
+     breached, but we can't afford not to fight bad AI with good AI. Outside work
+     I write about this stuff and speak about it around SF. Let's get into it."
+-->
+<section class="slide" data-notes="<span class='note-timing'>0:15 / 15s</span> — Quick intro, don't linger: 'Quick intro — I'm Shrivu. Staff eng and VP of AI strategy at Abnormal. We do AI-native email security. I set technical direction for about 300 engineers in a space where vibe coding will get you breached, but we can't afford not to fight bad AI with good AI. Outside work I write about this stuff and speak about it around SF. Let's get into it.'">
+    <div class="slide-content">
+        <div class="slide-label reveal">About me</div>
+        <h2 class="reveal">Shrivu Shankar</h2>
+        <div class="compare-grid reveal" style="margin-top: var(--content-gap);">
+            <div>
+                <h3 class="accent" style="font-size: var(--small-size); text-transform: uppercase; letter-spacing: 0.1em;">Work</h3>
+                <ul class="bullet-list">
+                    <li>Staff Eng &amp; VP of AI Strategy, <strong>Abnormal AI</strong></li>
+                    <li>Set technical direction for ~300 engineers in mission-critical email security</li>
+                    <li>Vibe coding gets you breached &mdash; but you can't afford not to fight bad AI with good AI</li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="accent" style="font-size: var(--small-size); text-transform: uppercase; letter-spacing: 0.1em;">Signal</h3>
+                <ul class="bullet-list">
+                    <li><strong>blog.sshh.io</strong> &mdash; Claude Code, AI benchmarks, agentic systems</li>
+                    <li>SF AI talks &mdash; security, coding agents, multi-agent systems</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="slide-number">02 / 17</div>
 </section>
 
 <!-- =============================================
@@ -740,12 +775,12 @@
         <h2 class="reveal">Agents crush greenfield.<br>They hit a wall on <span class="accent">real codebases</span>.</h2>
         <ul class="bullet-list reveal" style="margin-top: var(--content-gap);">
             <li>You write more docs, bigger CLAUDE.mds, longer prompts</li>
-            <li>The trap: bloated rules files and longer prompts that drown the agent in noise</li>
-            <li><strong class="accent">The reframe: redesign the codebase for the agent</strong></li>
-            <li>The mental model: <strong>10,000 interns with 1 week of context</strong> &mdash; design for that</li>
+            <li>Bloated rules files and longer prompts just drown the agent in noise</li>
+            <li><strong class="accent">Redesign the codebase for the agent, not the prompt</strong></li>
+            <li>Think <strong>10,000 interns with 1 week of context</strong> and design for that</li>
         </ul>
     </div>
-    <div class="slide-number">02 / 16</div>
+    <div class="slide-number">03 / 17</div>
 </section>
 
 <!-- =============================================
@@ -758,11 +793,13 @@
      same app, same functionality, organized for the agent." Point out: left agent
      reading 500-line god file, templates in stuff/, test that only tests 1+1=2.
      Right agent reads 50-line CLAUDE.md, navigates to experiments/, follows
-     routes.py/models.py/schemas.py pattern. FALLBACK: If agent hangs: "Let me
-     show you what this looked like when I ran it this morning" and switch to
+     routes.py/models.py/schemas.py pattern. NOTE: both agents may finish around
+     the same time. The story is not speed — it's verification quality. A rewrites
+     its own tests; B makes pre-written tests pass. FALLBACK: If agent hangs: "Let
+     me show you what this looked like when I ran it this morning" and switch to
      pre-recorded video. Let the difference land visually before narrating.
 -->
-<section class="slide" data-notes="<span class='note-timing'>1:30 / 3-4 min</span> — This is the centerpiece. Two terminal windows side by side. Left: cd A/ (messy). Right: cd B/ (optimized). Same prompt in both. Narrate: 'On the left, realistic codebase. God file, cryptic folders, no useful tests. On the right, same app, same functionality, organized for the agent.' Point out: left agent reading 500-line god file, templates in stuff/, test that only tests 1+1=2. Right agent reads 50-line CLAUDE.md, navigates to experiments/, follows routes.py/models.py/schemas.py pattern. <strong>FALLBACK:</strong> If agent hangs: 'Let me show you what this looked like when I ran it this morning' and switch to pre-recorded video. Let the difference land visually before narrating.">
+<section class="slide" data-notes="<span class='note-timing'>1:30 / 3-4 min</span> — This is the centerpiece. Two terminal windows side by side. Left: cd A/ (messy). Right: cd B/ (optimized). Same prompt in both. Narrate: 'On the left, realistic codebase. God file, cryptic folders, no useful tests. On the right, same app, same functionality, organized for the agent.' Point out: left agent reading 500-line god file, templates in stuff/, test that only tests 1+1=2. Right agent reads 50-line CLAUDE.md, navigates to tags/, follows the pattern. Note: both may finish around the same time — the story is verification, not speed. <strong>FALLBACK:</strong> If agent hangs: 'Let me show you what this looked like when I ran it this morning' and switch to pre-recorded video.">
     <div class="slide-content">
         <div class="slide-label reveal">Live demo</div>
         <h2 class="reveal">The Agent Race</h2>
@@ -774,7 +811,7 @@ POST /api/experiments/{id}/tags and
 show tags on the detail page.
 Follow existing patterns. Run tests."</span></div>
     </div>
-    <div class="slide-number">03 / 16</div>
+    <div class="slide-number">04 / 17</div>
 </section>
 
 <!-- =============================================
@@ -790,16 +827,18 @@ Follow existing patterns. Run tests."</span></div>
      broken SQL helpers, a validation function expecting different field names, and
      raw-SQL queries against columns that don't match the ORM. The agent had to
      reconcile eight different stories across nine files. And the only
-     test was 'assert 1+1 equals 2', so even after it cobbled something together,
-     nothing caught the bugs." Then flip: "On the right, the agent opened
-     CLAUDE.md, got a repo map, saw a tags/ directory in the map, went straight
-     there. Found a model, a schema, and a GET route already built. Found a TODO
-     comment telling it exactly what POST endpoint to add and which file to
-     reference for the pattern. It added 20 lines of code, ran pytest, and got
-     green." Pause. "Same model. Same prompt. Different codebase. That's the whole
-     talk." Transition: "So what are the actual levers? There are three."
+     test was 'assert 1+1 equals 2', so the agent rewrote the test file with its own
+     tests. It's grading its own homework — those tests will always pass its own
+     code." Then flip: "On the right, the agent opened CLAUDE.md, got a repo map,
+     saw a tags/ directory in the map, went straight there. Found a model, a schema,
+     and a GET route already built. Found a TODO comment telling it exactly what
+     POST endpoint to add and which file to reference for the pattern. It added 20
+     lines of code in one file, ran pytest, and all 28 tests passed — including the
+     4 tag tests that were written before the agent touched anything." Pause.
+     "Same model. Same prompt. Different codebase. That's the whole talk."
+     Transition: "So what are the actual levers? There are three."
 -->
-<section class="slide" data-notes="<span class='note-timing'>5:00 / 3 min</span> — Walk through each terminal: 'On the left, the agent spent 30 seconds reading a 500-line CLAUDE.md full of noise and a 600-line god file. That's a file organization problem. Then it grepped for tags and found 8+ conflicting artifacts across 9 files. Couldn't find templates in stuff/. Only test was 1+1=2, so broken code passed. That's a verification problem.' Flip: 'On the right, CLAUDE.md gave a repo map. Found tags/, saw the TODO, followed the pattern from runs/. Ran pytest, got green, stopped.' Pause: 'Same model. Same prompt. Different codebase. That's the whole talk.' Transition: 'So what are the actual levers? There are three.'">
+<section class="slide" data-notes="<span class='note-timing'>5:00 / 3 min</span> — Walk through each terminal: 'On the left, the agent read a 500-line CLAUDE.md full of noise, then a 600-line god file. It grepped for tags and found 8+ conflicting artifacts across 9 files. The only test was 1+1=2 — so it rewrote the test file. It's grading its own homework.' Flip: 'On the right, CLAUDE.md gave a repo map. Found tags/, saw the TODO, followed the pattern from runs/. Changed one file, ran pytest, all 28 tests passed — including 4 tag tests written before the agent touched anything.' Key: 'Both agents finished around the same time. This isn't a speed race. The difference is verification. A wrote its own tests. B made pre-written tests pass. That's the gap.' Transition: 'So what are the actual levers? There are three.'">
     <div class="slide-content">
         <div class="slide-label reveal">Results</div>
         <h2 class="reveal">What just happened?</h2>
@@ -810,7 +849,7 @@ Follow existing patterns. Run tests."</span></div>
                     <li>Read a <strong>500-line CLAUDE.md</strong> full of meeting notes and project history; got zero signal</li>
                     <li>Searched for "tags" and found <strong>8+ conflicting artifacts</strong>: feature flag, tags_v2.py, migration plan, metric tags, broken helpers, abandoned template, duplicate validators</li>
                     <li>Couldn't find templates (they're in <code>stuff/</code>)</li>
-                    <li>Only test was <code>assert 1 + 1 == 2</code>; no real verification</li>
+                    <li>Only test was <code>assert 1 + 1 == 2</code>; agent <strong>rewrote the tests</strong> &mdash; grading its own homework</li>
                 </ul>
             </div>
             <div class="compare-col good">
@@ -819,12 +858,12 @@ Follow existing patterns. Run tests."</span></div>
                     <li>Read <strong>50-line CLAUDE.md</strong>, got a repo map in 10 seconds</li>
                     <li>Found <code>tags/</code> folder with model, schema, and a GET route already built</li>
                     <li>Saw a <code>TODO</code> comment telling it exactly what POST endpoint to add</li>
-                    <li>Added the route (~20 lines), ran <code>pytest</code>, <strong>tests passed on the first try</strong></li>
+                    <li>Changed <strong>1 file</strong>, ran <code>pytest</code>, <strong>all 28 tests passed</strong> (including 4 pre-written tag tests)</li>
                 </ul>
             </div>
         </div>
     </div>
-    <div class="slide-number">04 / 16</div>
+    <div class="slide-number">05 / 17</div>
 </section>
 
 <!-- =============================================
@@ -865,7 +904,7 @@ Follow existing patterns. Run tests."</span></div>
         </div>
         <div class="score-badge reveal">0-3 per dimension / max 9</div>
     </div>
-    <div class="slide-number">05 / 16</div>
+    <div class="slide-number">06 / 17</div>
 </section>
 
 <!-- =============================================
@@ -922,7 +961,7 @@ Follow existing patterns. Run tests."</span></div>
             <p><strong>CLAUDE.md is advisory. Hooks are enforcement. Use both.</strong></p>
         </div>
     </div>
-    <div class="slide-number">06 / 16</div>
+    <div class="slide-number">07 / 17</div>
 </section>
 
 <!-- =============================================
@@ -965,7 +1004,7 @@ Follow existing patterns. Run tests."</span></div>
             <p><strong>Progressive disclosure.</strong> Root file = navigation. Package files = local rules.</p>
         </div>
     </div>
-    <div class="slide-number">07 / 16</div>
+    <div class="slide-number">08 / 17</div>
 </section>
 
 <!-- =============================================
@@ -996,7 +1035,7 @@ Follow existing patterns. Run tests."</span></div>
             <p><strong>Single-concern files</strong> (split when concerns mix, not at an arbitrary line count). <strong>Descriptive names.</strong> Feature-grouped folders.</p>
         </div>
     </div>
-    <div class="slide-number">08 / 16</div>
+    <div class="slide-number">09 / 17</div>
 </section>
 
 <!-- =============================================
@@ -1037,7 +1076,7 @@ Follow existing patterns. Run tests."</span></div>
             <p><strong>If a human needs an IDE to navigate it, an agent definitely cannot.</strong></p>
         </div>
     </div>
-    <div class="slide-number">09 / 16</div>
+    <div class="slide-number">10 / 17</div>
 </section>
 
 <!-- =============================================
@@ -1088,7 +1127,7 @@ Follow existing patterns. Run tests."</span></div>
             <p style="font-family: var(--font-mono); font-size: var(--small-size);">Agent edits file → PostToolUse fires → lint + type-check + pytest → errors fed back → agent self-corrects → repeat</p>
         </div>
     </div>
-    <div class="slide-number">10 / 16</div>
+    <div class="slide-number">11 / 17</div>
 </section>
 
 <!-- =============================================
@@ -1130,23 +1169,25 @@ Follow existing patterns. Run tests."</span></div>
             <p><strong>Every dimension needs a command that returns pass/fail.</strong> No command = no verification.</p>
         </div>
     </div>
-    <div class="slide-number">11 / 16</div>
+    <div class="slide-number">12 / 17</div>
 </section>
 
 <!-- =============================================
      SLIDE 12: ANTI-PATTERNS (was 9, rewritten)
      =============================================
-     SPEAKER NOTES: Start at ~17:00. About 60 seconds. Quick hits: "Six things
+     SPEAKER NOTES: Start at ~17:00. About 60 seconds. Quick hits: "Eight things
      teams get burned by. Test-gaming: agent runs 30 minutes, reports done, but
      it deleted most existing tests. Implementation-mirroring: agent writes tests
      that mirror its own code, so both are wrong and both look green. Rule-gaming:
      agent finds the lint allowlist and modifies it. No feedback loop: codes for
      5 minutes without running anything. Bloated context: 17KB of rules fills
      the context window. Advisory-only rules: CLAUDE.md says don't modify tests,
-     agent ignores it." Transition: "Alright. That's the framework. Now it's your
-     turn."
+     agent ignores it. Reinventing the wheel: Pydantic installed but never used,
+     agent hand-rolls broken validation. Pattern pollution: broken sanitize
+     function, agent copies insecure pattern into new code." Transition:
+     "Alright. That's the framework. Now it's your turn."
 -->
-<section class="slide" data-notes="<span class='note-timing'>17:00 / 60s</span> — Quick hits: 'Six things teams get burned by. Test-gaming: agent deletes existing tests to make its code pass. Implementation-mirroring: agent writes tests that mirror its own code, both wrong and both green. Rule-gaming: agent finds the lint allowlist and modifies it. No feedback loop: 5 minutes of coding, 40 errors piled up. Bloated context: 17KB of rules fills 125K of 126K context tokens. Advisory-only: CLAUDE.md says do not modify tests, agent ignores it.' These are quick hits, not deep dives. Transition: 'Alright. That's the framework. Now it's your turn.'">
+<section class="slide" data-notes="<span class='note-timing'>17:00 / 60s</span> — Quick hits: 'Eight things teams get burned by. Test-gaming: agent deletes existing tests to make its code pass. Implementation-mirroring: agent writes tests that mirror its own code, both wrong and both green. Rule-gaming: agent finds the lint allowlist and modifies it. No feedback loop: 5 minutes of coding, 40 errors piled up. Bloated context: 17KB of rules fills 125K of 126K context tokens. Advisory-only: CLAUDE.md says do not modify tests, agent ignores it. Reinventing the wheel: Pydantic installed but never used, agent hand-rolls broken validation. Pattern pollution: broken sanitize function in codebase, agent copies the insecure pattern into new code.' These are quick hits, not deep dives. Transition: 'Alright. That's the framework. Now it's your turn.'">
     <div class="slide-content">
         <div class="slide-label reveal">Watch out</div>
         <h2 class="reveal">The Anti-Patterns</h2>
@@ -1161,10 +1202,12 @@ Follow existing patterns. Run tests."</span></div>
                 <tr><td>No feedback loop</td><td>Agent codes for 5 minutes straight without running anything. By the time you check, 40 errors have piled up</td><td>PostToolUse hooks auto-run verification</td></tr>
                 <tr><td>Bloated context</td><td>17KB of rules fills 125,996 of 125,999 context tokens. Agent spins with no output &mdash; completely frozen</td><td>200-line limit, use <code>.claude/rules/</code> for progressive disclosure</td></tr>
                 <tr><td>Advisory-only rules</td><td>CLAUDE.md says "do not modify tests." Agent ignores it, rewrites your test suite, ships broken code</td><td>Enforce with hooks and <code>settings.json</code> deny rules</td></tr>
+                <tr><td>Reinventing the wheel</td><td>Pydantic is in requirements.txt but nobody wrote schemas. Agent hand-rolls validation &mdash; same bugs, no types</td><td>Use the libraries you already have. One schema file &gt; 50 lines of manual checks</td></tr>
+                <tr><td>Pattern pollution</td><td>Codebase has SQL injection and a broken sanitize(). Agent copies the pattern &mdash; new code is insecure too</td><td>Clean code = clean output. Fix existing patterns before letting agents extend them</td></tr>
             </tbody>
         </table>
     </div>
-    <div class="slide-number">12 / 16</div>
+    <div class="slide-number">13 / 17</div>
 </section>
 
 <!-- =============================================
@@ -1207,7 +1250,7 @@ Follow existing patterns. Run tests."</span></div>
             </div>
         </div>
     </div>
-    <div class="slide-number">13 / 16</div>
+    <div class="slide-number">14 / 17</div>
 </section>
 
 <!-- =============================================
@@ -1244,7 +1287,7 @@ Follow existing patterns. Run tests."</span></div>
             </div>
         </div>
     </div>
-    <div class="slide-number">14 / 16</div>
+    <div class="slide-number">15 / 17</div>
 </section>
 
 <!-- =============================================
@@ -1287,7 +1330,7 @@ Follow existing patterns. Run tests."</span></div>
             </div>
         </div>
     </div>
-    <div class="slide-number">15 / 16</div>
+    <div class="slide-number">16 / 17</div>
 </section>
 
 <!-- =============================================
@@ -1318,7 +1361,7 @@ Follow existing patterns. Run tests."</span></div>
             </div>
         </div>
     </div>
-    <div class="slide-number">16 / 16</div>
+    <div class="slide-number">17 / 17</div>
 </section>
 
 <script>

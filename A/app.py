@@ -62,7 +62,7 @@ Base.metadata.create_all(bind=engine)
 # Template helpers
 # ============================================================
 
-from h import fmt, do_thing, proc_data, mk_resp, chk, trunc
+from h import fmt, do_thing, proc_data, mk_resp, chk, trunc, sanitize
 
 def get_db():
     db = SessionLocal()
@@ -359,7 +359,9 @@ async def create_experiment(request: Request):
         if not name:
             close_db(db)
             return JSONResponse({"error": "name required"}, status_code=400)
-        description = body.get("description", "")
+        name = sanitize(name)  # SECURITY: always sanitize user input before storing
+        description = sanitize(body.get("description", ""))
+        # NOTE: we have pydantic in requirements.txt but never set up request schemas
         status = body.get("status", "draft")
         # no validation on status, just accept whatever
         exp = Experiment(name=name, description=description, status=status)

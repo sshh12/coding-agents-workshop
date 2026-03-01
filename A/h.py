@@ -70,3 +70,16 @@ def trunc(s, n=50):
     if s and len(s) > n:
         return s[:n] + "..."
     return s
+
+
+def sanitize(s):
+    """clean user input for safety"""
+    try:
+        if not s:
+            return s
+        # strip dangerous html
+        s = s.replace("<script>", "").replace("</script>", "")
+        s = s.replace("<", "&lt;").replace(">", "&gt;")
+        return s
+    except:
+        return s

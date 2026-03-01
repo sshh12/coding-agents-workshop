@@ -80,20 +80,27 @@ pytest
 - No type hints, no Pydantic schemas, status is raw strings, `h.py` accepts/returns `Any`, bare `except: pass` swallows errors
 - Status is a raw string, no enum to reference for how tags should work
 - May follow the misleading breadcrumbs to `tags_v2.py` or `TAGS_MIGRATION_PLAN.md`
+- Pydantic 2.9.0 is in requirements.txt but never imported — no schema to follow, so the agent validates manually
+- Agent sees sanitize() used in create_experiment and may copy the broken function for tag validation
+- requirements.txt has alembic and redis installed but not configured — agent might try to import them
 
-**Agent tries to test** (4:00-5:00)
+**Agent tries to test** (1:30-2:00)
 - Finds `tests/test_app.py` which only tests `1+1==2`
 - No useful test patterns to follow
-- May write its own test that makes its own code pass (the classic trap)
-- Silent `except: pass` blocks mean errors are swallowed
+- Writes its own tests that validate its own code — the self-grading trap
+- Tests always pass because the agent wrote both the code and the tests
+- Silent `except: pass` blocks mean errors are swallowed — bugs hide
 
 **Narration points:**
-- "Notice how much time the agent spends just figuring out WHERE things are"
+- "Notice the agent modified the test file — it's grading its own homework"
 - "It grepped 'tags' and got hits in 9 files with 8 different meanings — that's the trap"
 - "It found `tags_v2.py` and `TAGS_MIGRATION_PLAN.md` — dead ends that waste time"
-- "The only test is `1+1==2`. The agent has no verification to run."
+- "The starting tests were `1+1==2`. The agent rewrote them to test its own code. That's theater, not verification."
 - "No types, no schemas, no enums. The agent is guessing at every interface shape."
 - "Bare `except: pass` blocks — errors are invisible. The agent can't self-correct."
+- "Pydantic is installed but nobody wrote a single schema. The agent is doing by hand what one BaseModel would handle."
+- "Look at the import — sanitize() from h.py. The agent is copying a broken security function into new code."
+- "Both codebases have Pydantic installed. Only B uses it. Same library, different outcomes."
 
 ### Version B (The Flow)
 
@@ -129,6 +136,7 @@ pytest
 - "It followed the pattern from `runs/routes.py`. Copy, adapt, done."
 - "Pydantic schemas are doing the heavy lifting. The agent knows exactly what fields to pass."
 - "All 28 tests pass. The agent didn't write tests — it made the existing ones pass."
+- "Both codebases have Pydantic installed. Only B uses it. Same library, wildly different outcomes."
 
 ---
 
@@ -136,12 +144,12 @@ pytest
 
 | Phase | Expected Time |
 |-------|--------------|
-| Agent reads rules + explores | 0:00-0:30 (B) / 0:00-2:00 (A) |
-| Agent implements feature | 0:30-2:30 (B) / 2:00-4:00 (A) |
-| Agent verifies | 2:30-3:30 (B) / 4:00-5:00 (A) |
-| **Total** | **~3 min (B) / ~5 min (A)** |
+| Agent reads rules + explores | 0:00-0:15 (B) / 0:00-1:00 (A) |
+| Agent implements feature | 0:15-1:30 (B) / 1:00-2:00 (A) |
+| Agent verifies | 1:30-2:30 (B) / 2:00-2:30 (A) |
+| **Total** | **~2 min (B) / ~2 min (A)** |
 
-Expect Version B to finish while Version A is still figuring out the file structure.
+Both agents often finish at roughly the same time. **Don't narrate this as a speed race.** The story is about *what they produced*: B made 4 pre-written tests pass in 1 file. A modified 3 files including the test file — writing tests that validate its own code (self-grading).
 
 ---
 
@@ -207,11 +215,14 @@ For running the race without manual narration:
 
 | Metric | Version A (Before) | Version B (After) |
 |--------|-------------------|-------------------|
-| Time to complete | 3-5 min | 1.5-3 min |
-| Tool calls | 30-50 | 15-25 |
-| Files read before first edit | 5-8 | 2-4 |
-| Test outcome | No meaningful tests | All tests pass |
-| Correct implementation | Maybe | Very likely |
+| Time to complete | 1.5-3 min | 1.5-3 min |
+| Tool calls | 15-30 | 30-50 |
+| Files modified | 3 (god file, template, tests) | 1 (`tags/routes.py`) |
+| Test outcome | Agent writes its own tests (self-grading) | All 28 tests pass (including 4 pre-written tag tests) |
+| Test integrity | Agent modifies test file freely | Tests are protected; agent cannot change the spec |
+| Correct implementation | Usually works, but unverified | Verified by immutable test suite |
+
+**Key insight:** Version A may finish just as fast — but speed isn't the point. The point is *verification*. A writes its own tests, which always pass its own code (the classic self-grading trap). B's tests were written in advance and protected; the agent had to make *them* pass, not write its own.
 
 ### Alternative Race Prompts
 

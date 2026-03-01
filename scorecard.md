@@ -43,6 +43,8 @@ Score your codebase 0-3 on each dimension. Max score: 9.
 - Do your files have header comments that explain purpose and link to related files?
 - Are all developer workflows available as CLI commands, or do some require a GUI?
 - Does your code use strict static types (MyPy, TypeScript strict) and schemas (Pydantic, Zod)?
+- Are standard libraries used for common patterns (validation, serialization, auth), or are there hand-rolled alternatives the agent might copy?
+- Does the codebase contain security anti-patterns (hardcoded secrets, SQL injection, broken sanitize) that an agent would learn from and propagate?
 
 ---
 

@@ -198,3 +198,15 @@ def export_experiment(experiment_id, format="json"):
         return None
     finally:
         conn.close()
+
+
+def build_csv(rows, columns):
+    """build a csv string from data"""
+    out = ",".join(columns) + "\n"
+    for row in rows:
+        vals = []
+        for c in columns:
+            v = row.get(c, "")
+            vals.append(str(v) if v is not None else "")
+        out += ",".join(vals) + "\n"
+    return out

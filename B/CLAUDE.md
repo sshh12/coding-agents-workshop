@@ -42,6 +42,8 @@ Before submitting, all of these must pass:
 - Routes: FastAPI APIRouter in `{feature}/routes.py`, mounted in `manage.py`
 - Templates: Jinja2 in `{feature}/templates/`, extend `shared/templates/base.html`
 - Types: all function signatures have type hints. Use Pydantic schemas for all API request/response bodies.
+- Validation: All user input validated via Pydantic schemas. Never hand-roll validation logic.
+- Security: No hardcoded secrets. No raw SQL. All queries via SQLAlchemy ORM.
 - Status fields: use the `ExperimentStatus` / `RunStatus` enums, never raw strings
 - Every file starts with a 4-line header comment (path, purpose, why, relevant files)
 
