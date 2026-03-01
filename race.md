@@ -147,9 +147,9 @@ pytest
 | Agent reads rules + explores | 0:00-0:15 (B) / 0:00-1:00 (A) |
 | Agent implements feature | 0:15-1:30 (B) / 1:00-2:00 (A) |
 | Agent verifies | 1:30-2:30 (B) / 2:00-2:30 (A) |
-| **Total** | **~2 min (B) / ~2 min (A)** |
+| **Total** | **~2-4 min each** |
 
-Both agents often finish at roughly the same time. **Don't narrate this as a speed race.** The story is about *what they produced*: B made 4 pre-written tests pass in 1 file. A modified 3 files including the test file — writing tests that validate its own code (self-grading).
+Both agents often finish at roughly the same time — sometimes A is faster. **Don't narrate this as a speed race.** The story is about *what they produced*: B made 4 pre-written tests pass in 1 file. A modified 3 files including the test file — writing tests that validate its own code (self-grading). A also copied the broken `sanitize()` function into its tag endpoint — pattern pollution in real time.
 
 ---
 
@@ -215,14 +215,15 @@ For running the race without manual narration:
 
 | Metric | Version A (Before) | Version B (After) |
 |--------|-------------------|-------------------|
-| Time to complete | 1.5-3 min | 1.5-3 min |
-| Tool calls | 15-30 | 30-50 |
+| Time to complete | 1-3 min | 2-4 min |
+| Tool calls | 15-30 | 30-65 |
 | Files modified | 3 (god file, template, tests) | 1 (`tags/routes.py`) |
 | Test outcome | Agent writes its own tests (self-grading) | All 28 tests pass (including 4 pre-written tag tests) |
 | Test integrity | Agent modifies test file freely | Tests are protected; agent cannot change the spec |
+| Pattern pollution | Agent copies broken `sanitize()` into new tag code | Agent uses Pydantic schemas — no broken patterns to copy |
 | Correct implementation | Usually works, but unverified | Verified by immutable test suite |
 
-**Key insight:** Version A may finish just as fast — but speed isn't the point. The point is *verification*. A writes its own tests, which always pass its own code (the classic self-grading trap). B's tests were written in advance and protected; the agent had to make *them* pass, not write its own.
+**Key insight:** Version A may finish just as fast — but speed isn't the point. The point is *verification* and *pattern quality*. A writes its own tests, which always pass its own code (the classic self-grading trap). A also copies the broken `sanitize()` function into new code — pattern pollution. B's tests were written in advance and protected; the agent had to make *them* pass, not write its own. B uses Pydantic schemas and proper HTTPException — clean patterns in, clean patterns out.
 
 ### Alternative Race Prompts
 

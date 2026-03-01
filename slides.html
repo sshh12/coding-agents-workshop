@@ -829,16 +829,19 @@ Follow existing patterns. Run tests."</span></div>
      reconcile eight different stories across nine files. And the only
      test was 'assert 1+1 equals 2', so the agent rewrote the test file with its own
      tests. It's grading its own homework — those tests will always pass its own
-     code." Then flip: "On the right, the agent opened CLAUDE.md, got a repo map,
+     code. And here's the kicker: it found sanitize() in the existing code and copied
+     it into the new tag endpoint. That function is broken XSS prevention — the agent
+     just propagated a security vulnerability into new code." Then flip: "On the right, the agent opened CLAUDE.md, got a repo map,
      saw a tags/ directory in the map, went straight there. Found a model, a schema,
      and a GET route already built. Found a TODO comment telling it exactly what
      POST endpoint to add and which file to reference for the pattern. It added 20
-     lines of code in one file, ran pytest, and all 28 tests passed — including the
+     lines of code in one file using Pydantic schemas and proper error handling —
+     no broken patterns to copy. Ran pytest, and all 28 tests passed — including the
      4 tag tests that were written before the agent touched anything." Pause.
      "Same model. Same prompt. Different codebase. That's the whole talk."
      Transition: "So what are the actual levers? There are three."
 -->
-<section class="slide" data-notes="<span class='note-timing'>5:00 / 3 min</span> — Walk through each terminal: 'On the left, the agent read a 500-line CLAUDE.md full of noise, then a 600-line god file. It grepped for tags and found 8+ conflicting artifacts across 9 files. The only test was 1+1=2 — so it rewrote the test file. It's grading its own homework.' Flip: 'On the right, CLAUDE.md gave a repo map. Found tags/, saw the TODO, followed the pattern from runs/. Changed one file, ran pytest, all 28 tests passed — including 4 tag tests written before the agent touched anything.' Key: 'Both agents finished around the same time. This isn't a speed race. The difference is verification. A wrote its own tests. B made pre-written tests pass. That's the gap.' Transition: 'So what are the actual levers? There are three.'">
+<section class="slide" data-notes="<span class='note-timing'>5:00 / 3 min</span> — Walk through each terminal: 'On the left, the agent read a 500-line CLAUDE.md full of noise, then a 600-line god file. It grepped for tags and found 8+ conflicting artifacts across 9 files. The only test was 1+1=2 — so it rewrote the test file. It's grading its own homework. And look — it found sanitize() in the existing code and copied it into the tag endpoint. That function is broken. The agent just propagated an XSS vulnerability into new code.' Flip: 'On the right, CLAUDE.md gave a repo map. Found tags/, saw the TODO, followed the pattern from runs/. Changed one file, ran pytest, all 28 tests passed — including 4 tag tests written before the agent touched anything. It used Pydantic schemas, proper error handling, no broken patterns copied.' Key: 'Both agents finished around the same time. This isn't a speed race. The difference is verification and pattern quality. A wrote its own tests and copied broken security code. B made pre-written tests pass using clean patterns. That's the gap.' Transition: 'So what are the actual levers? There are three.'">
     <div class="slide-content">
         <div class="slide-label reveal">Results</div>
         <h2 class="reveal">What just happened?</h2>
@@ -850,6 +853,7 @@ Follow existing patterns. Run tests."</span></div>
                     <li>Searched for "tags" and found <strong>8+ conflicting artifacts</strong>: feature flag, tags_v2.py, migration plan, metric tags, broken helpers, abandoned template, duplicate validators</li>
                     <li>Couldn't find templates (they're in <code>stuff/</code>)</li>
                     <li>Only test was <code>assert 1 + 1 == 2</code>; agent <strong>rewrote the tests</strong> &mdash; grading its own homework</li>
+                    <li>Copied the broken <code>sanitize()</code> function into new tag code &mdash; <strong>pattern pollution</strong></li>
                 </ul>
             </div>
             <div class="compare-col good">

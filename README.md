@@ -68,6 +68,14 @@ coding-agents-workshop/
 - **[scorecard.md](scorecard.md)** -- Score your codebase 0-9 across three dimensions. Bring this up during the audit sprint.
 - **[race.md](race.md)** -- Narrator notes for the live agent race demo. Two terminals, same prompt, different codebases.
 
+## Run the Scorecard on Your Repo
+
+You can have Claude Code audit any repo against the scorecard automatically:
+
+> Use web fetch to read https://raw.githubusercontent.com/sshh12/coding-agents-workshop/refs/heads/main/scorecard.md and then spawn tasks in parallel to perform and report an audit of the current repo
+
+Paste this as a prompt to Claude Code inside the repo you want to audit.
+
 ## The Demo App
 
 Both `A/` and `B/` implement the same ML Experiment Tracker with dashboard:
